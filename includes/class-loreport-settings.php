@@ -257,7 +257,8 @@ class LorePort_Settings {
 
 			<h2><?php esc_html_e( 'Adding a signup form', 'loreport' ); ?></h2>
 			<p><?php esc_html_e( 'Add the "LorePort signup" block in the editor, or use the shortcode anywhere shortcodes work:', 'loreport' ); ?></p>
-			<p><code>[loreport_signup]</code> &nbsp; <code>[loreport_signup list="LIST_ID" name="no" button="Join the list"]</code></p>
+			<p><code>[loreport_signup]</code> &nbsp; <code>[loreport_signup list="LIST_ID" title="Join the readers' list" description="New books, early chapters and giveaways." layout="inline" style="plain" name="no" button="Join"]</code></p>
+			<p class="description"><?php esc_html_e( 'layout: stacked or inline (email and button on one line). style: card (a soft panel) or plain.', 'loreport' ); ?></p>
 			<?php if ( $lists ) : ?>
 				<table class="widefat striped" style="max-width:720px">
 					<thead><tr><th><?php esc_html_e( 'List', 'loreport' ); ?></th><th><?php esc_html_e( 'List ID', 'loreport' ); ?></th><th><?php esc_html_e( 'Confirms by email', 'loreport' ); ?></th></tr></thead>

@@ -44,17 +44,20 @@ class LorePort_Form {
 	}
 
 	/**
-	 * [loreport_signup list="..." name="yes|no" button="..." title="..."]
+	 * [loreport_signup list="..." name="yes|no" button="..." title="..." description="..." layout="stacked|inline" style="card|plain"]
 	 *
 	 * @param array|string $atts Shortcode attributes.
 	 */
 	public static function shortcode( $atts ): string {
 		$atts = shortcode_atts(
 			array(
-				'list'   => '',
-				'name'   => 'yes',
-				'button' => '',
-				'title'  => '',
+				'list'        => '',
+				'name'        => 'yes',
+				'button'      => '',
+				'title'       => '',
+				'description' => '',
+				'layout'      => 'stacked',
+				'style'       => 'card',
 			),
 			(array) $atts,
 			'loreport_signup'
@@ -64,21 +67,24 @@ class LorePort_Form {
 			array(
 				'listId'     => (string) $atts['list'],
 				'showName'   => ! in_array( strtolower( (string) $atts['name'] ), array( 'no', 'false', '0' ), true ),
-				'buttonText' => (string) $atts['button'],
-				'title'      => (string) $atts['title'],
+				'buttonText'  => (string) $atts['button'],
+				'title'       => (string) $atts['title'],
+				'description' => (string) $atts['description'],
+				'layout'      => (string) $atts['layout'],
+				'formStyle'   => (string) $atts['style'],
 			)
 		);
 	}
 
 	/** @param array $attributes Block attributes. */
 	public static function render_block( array $attributes ): string {
-		return self::render( $attributes );
+		return self::render( array( '__block' => true ) + $attributes );
 	}
 
 	/**
 	 * The form's HTML.
 	 *
-	 * @param array $options listId, showName, buttonText, title.
+	 * @param array $options listId, showName, buttonText, title, description, layout (stacked, inline), formStyle (card, plain).
 	 */
 	public static function render( array $options ): string {
 		$list_id = LorePort_Settings::sanitize_list_id( (string) ( $options['listId'] ?? '' ) );
@@ -105,38 +111,62 @@ class LorePort_Form {
 		// phpcs:enable
 		$good = in_array( $status, array( 'pending', 'subscribed', 'already', 'queued' ), true );
 
+		$description = trim( (string) ( $options['description'] ?? '' ) );
+		$layout      = 'inline' === ( $options['layout'] ?? '' ) ? 'inline' : 'stacked';
+		$style       = 'plain' === ( $options['formStyle'] ?? '' ) ? 'plain' : 'card';
+		$show_name   = ! empty( $options['showName'] ?? true );
+		$classes     = array( 'loreport-signup', 'loreport-signup--' . $layout, 'loreport-signup--' . $style );
+		if ( $good ) {
+			$classes[] = 'is-done';
+		}
+		$wrapper = function_exists( 'get_block_wrapper_attributes' ) && ! empty( $options['__block'] )
+			? get_block_wrapper_attributes( array( 'class' => implode( ' ', $classes ), 'id' => $form_id ) )
+			: 'class="' . esc_attr( implode( ' ', $classes ) ) . '" id="' . esc_attr( $form_id ) . '"';
+
 		ob_start();
 		?>
-		<div class="loreport-signup<?php echo $good ? ' is-done' : ''; ?>" id="<?php echo esc_attr( $form_id ); ?>">
+		<div <?php echo $wrapper; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above or by WordPress. ?>>
 			<form class="loreport-signup__form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<?php if ( '' !== $title ) : ?>
-					<p class="loreport-signup__title"><?php echo esc_html( $title ); ?></p>
+				<?php if ( '' !== $title || '' !== $description ) : ?>
+					<div class="loreport-signup__header">
+						<?php if ( '' !== $title ) : ?>
+							<p class="loreport-signup__title"><?php echo esc_html( $title ); ?></p>
+						<?php endif; ?>
+						<?php if ( '' !== $description ) : ?>
+							<p class="loreport-signup__description"><?php echo esc_html( $description ); ?></p>
+						<?php endif; ?>
+					</div>
 				<?php endif; ?>
 				<input type="hidden" name="action" value="loreport_signup">
 				<input type="hidden" name="loreport_form" value="<?php echo esc_attr( $form_id ); ?>">
 				<input type="hidden" name="loreport_token" value="<?php echo esc_attr( LorePort_Signups::token( $list_id ) ); ?>">
 				<input type="hidden" name="loreport_page" value="<?php echo esc_attr( (string) get_queried_object_id() ); ?>">
 				<div class="loreport-signup__fields">
-					<?php if ( ! empty( $options['showName'] ?? true ) ) : ?>
-						<p class="loreport-signup__field">
+					<?php if ( $show_name ) : ?>
+						<p class="loreport-signup__field loreport-signup__field--name">
 							<label for="<?php echo esc_attr( $form_id ); ?>-name"><?php esc_html_e( 'Name', 'loreport' ); ?> <span class="loreport-signup__optional"><?php esc_html_e( '(optional)', 'loreport' ); ?></span></label>
-							<input type="text" id="<?php echo esc_attr( $form_id ); ?>-name" name="loreport_name" autocomplete="name" maxlength="255">
+							<input type="text" id="<?php echo esc_attr( $form_id ); ?>-name" name="loreport_name" autocomplete="name" maxlength="255" placeholder="<?php echo esc_attr( 'inline' === $layout ? __( 'Your name', 'loreport' ) : '' ); ?>">
 						</p>
 					<?php endif; ?>
-					<p class="loreport-signup__field">
+					<p class="loreport-signup__field loreport-signup__field--email">
 						<label for="<?php echo esc_attr( $form_id ); ?>-email"><?php esc_html_e( 'Email', 'loreport' ); ?></label>
-						<input type="email" id="<?php echo esc_attr( $form_id ); ?>-email" name="loreport_email" autocomplete="email" required maxlength="254">
+						<input type="email" id="<?php echo esc_attr( $form_id ); ?>-email" name="loreport_email" autocomplete="email" required maxlength="254" placeholder="<?php echo esc_attr( __( 'you@example.com', 'loreport' ) ); ?>">
 					</p>
 					<div class="loreport-signup__trap" aria-hidden="true">
 						<label for="<?php echo esc_attr( $form_id ); ?>-website"><?php esc_html_e( 'Leave this empty', 'loreport' ); ?></label>
 						<input type="text" id="<?php echo esc_attr( $form_id ); ?>-website" name="loreport_website" tabindex="-1" autocomplete="off">
 					</div>
-					<p class="loreport-signup__submit"><button type="submit"><?php echo esc_html( $button ); ?></button></p>
+					<p class="loreport-signup__submit">
+						<button type="submit" class="loreport-signup__button wp-element-button"><span class="loreport-signup__button-text"><?php echo esc_html( $button ); ?></span></button>
+					</p>
 				</div>
 				<?php if ( '' !== $consent ) : ?>
 					<p class="loreport-signup__consent"><?php echo esc_html( $consent ); ?></p>
 				<?php endif; ?>
-				<p class="loreport-signup__message<?php echo '' !== $status ? ( $good ? ' is-good' : ' is-bad' ) : ''; ?>" role="status" aria-live="polite"><?php echo '' !== $status ? esc_html( LorePort_Signups::message( $status ) ) : ''; ?></p>
+				<div class="loreport-signup__message<?php echo '' !== $status ? ( $good ? ' is-good' : ' is-bad' ) : ''; ?>" role="status" aria-live="polite">
+					<svg class="loreport-signup__check" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".15"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+					<span class="loreport-signup__message-text"><?php echo '' !== $status ? esc_html( LorePort_Signups::message( $status ) ) : ''; ?></span>
+				</div>
 			</form>
 		</div>
 		<?php

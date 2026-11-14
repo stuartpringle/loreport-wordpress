@@ -12,6 +12,7 @@
 		}
 		var wrapper = form.closest( '.loreport-signup' );
 		var message = form.querySelector( '.loreport-signup__message' );
+		var messageText = form.querySelector( '.loreport-signup__message-text' ) || message;
 		form.setAttribute( 'aria-busy', 'true' );
 
 		fetch( form.action, {
@@ -25,7 +26,7 @@
 			} )
 			.then( function ( result ) {
 				var good = [ 'pending', 'subscribed', 'already', 'queued' ].indexOf( result.status ) !== -1;
-				message.textContent = result.message || '';
+				messageText.textContent = result.message || '';
 				message.className = 'loreport-signup__message ' + ( good ? 'is-good' : 'is-bad' );
 				if ( good && wrapper ) {
 					wrapper.classList.add( 'is-done' );

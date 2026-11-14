@@ -2,24 +2,79 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "loreport/signup",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"title": "LorePort signup",
 	"category": "widgets",
 	"icon": "email-alt",
 	"description": "A newsletter signup form for one of your LorePort lists.",
-	"keywords": [ "newsletter", "subscribe", "email", "mailing list" ],
+	"keywords": [
+		"newsletter",
+		"subscribe",
+		"email",
+		"mailing list"
+	],
 	"textdomain": "loreport",
 	"attributes": {
-		"listId": { "type": "string", "default": "" },
-		"showName": { "type": "boolean", "default": true },
-		"buttonText": { "type": "string", "default": "" },
-		"title": { "type": "string", "default": "" }
+		"listId": {
+			"type": "string",
+			"default": ""
+		},
+		"showName": {
+			"type": "boolean",
+			"default": true
+		},
+		"buttonText": {
+			"type": "string",
+			"default": ""
+		},
+		"title": {
+			"type": "string",
+			"default": ""
+		},
+		"description": {
+			"type": "string",
+			"default": ""
+		},
+		"layout": {
+			"type": "string",
+			"enum": [
+				"stacked",
+				"inline"
+			],
+			"default": "stacked"
+		},
+		"formStyle": {
+			"type": "string",
+			"enum": [
+				"card",
+				"plain"
+			],
+			"default": "card"
+		}
 	},
 	"supports": {
 		"html": false,
-		"align": [ "wide", "full" ],
-		"spacing": { "margin": true, "padding": true },
-		"color": { "background": true, "text": true }
+		"align": [
+			"wide",
+			"full"
+		],
+		"spacing": {
+			"margin": true,
+			"padding": true
+		},
+		"color": {
+			"background": true,
+			"text": true
+		},
+		"typography": {
+			"fontSize": true
+		}
 	},
-	"editorScript": "file:./index.js"
+	"editorScript": "file:./index.js",
+	"example": {
+		"attributes": {
+			"title": "Join the readers' list",
+			"description": "News about new books, early chapters and the occasional giveaway."
+		}
+	}
 }

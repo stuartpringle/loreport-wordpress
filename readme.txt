@@ -4,7 +4,7 @@ Tags: newsletter, email, signup form, mailing list, authors
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 0.1.0
+Stable tag: 0.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -14,7 +14,7 @@ Newsletter signup forms for LorePort authors: a signup block and shortcode, and 
 
 [LorePort](https://loreport.ca) is a newsletter service for fiction authors. This plugin connects your WordPress site to your LorePort account so readers can join your lists from your site.
 
-* **Signup form** as a block ("LorePort signup") or the `[loreport_signup]` shortcode. Choose the list, whether to ask for a name, a heading and the button text. It works without JavaScript and picks up your theme's look.
+* **Signup form** as a block ("LorePort signup") or the `[loreport_signup]` shortcode. Choose the list, a heading and description, whether to ask for a name, the button text, a card or plain look, and a stacked or inline layout. It uses your theme's fonts, colours and button style, suits light and dark themes, and works without JavaScript.
 * **Consent done properly.** Signups are treated exactly like LorePort's own signup forms: if your list asks readers to confirm by email, they get the confirmation email, and LorePort records their consent (the wording, time, IP address and browser).
 * **Comment form and WooCommerce checkout checkboxes**, never ticked in advance, so commenters and customers can choose to join a list. Works with both the classic and the block checkout.
 * **No lost signups.** If LorePort can't be reached for a moment, signups wait on your site and are retried automatically.
@@ -43,6 +43,10 @@ This plugin connects to the LorePort API (https://loreport.ca/api/v1), the servi
 
 The plugin records `REMOTE_ADDR`. Behind a trusted proxy, set the real address with the `loreport_reader_ip` filter, for example from your CDN's client-IP header.
 
+= Can I change how the form looks? =
+
+The block has Look (card or plain), Layout (stacked or inline), colour and spacing settings. For more, set CSS custom properties on `.loreport-signup`, such as `--loreport-accent`, `--loreport-radius` and `--loreport-field-radius`, or style the `loreport-signup__*` classes; the plugin's rules are deliberately easy to override.
+
 = Can I change the messages readers see? =
 
 Yes, with the `loreport_signup_message` filter (it receives the message and a status: pending, subscribed, already, queued, refused, invalid, limited or error).
@@ -52,6 +56,10 @@ Yes, with the `loreport_signup_message` filter (it receives the message and a st
 Define `LOREPORT_API_URL` in wp-config.php, or use the `loreport_api_url` filter.
 
 == Changelog ==
+
+= 0.2.0 =
+* Comment signups wait until the comment is approved; spam never signs anyone up.
+* A designed signup form: card or plain look, stacked or inline layout, an optional description, the theme's button style, a success panel and a sending spinner, for light and dark themes.
 
 = 0.1.0 =
 * First version: settings, signup block and shortcode, comment and WooCommerce checkboxes, retry queue, privacy-policy text.
