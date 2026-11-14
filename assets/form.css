@@ -1,18 +1,297 @@
-/* LorePort signup form: deliberately plain, so it takes on the theme's look. */
-.loreport-signup__form { margin: 0; }
-.loreport-signup__title { font-weight: 600; margin: 0 0 .5em; }
-.loreport-signup__fields { display: flex; flex-wrap: wrap; gap: .75em; align-items: flex-end; }
-.loreport-signup__field { flex: 1 1 14em; margin: 0; }
-.loreport-signup__field label { display: block; margin-bottom: .25em; }
-.loreport-signup__field input { box-sizing: border-box; width: 100%; }
-.loreport-signup__optional { opacity: .7; font-weight: normal; }
-.loreport-signup__submit { margin: 0; }
-.loreport-signup__consent { font-size: .875em; opacity: .8; margin: .75em 0 0; }
-.loreport-signup__message { margin: .75em 0 0; font-weight: 600; }
-.loreport-signup__message:empty { display: none; }
-.loreport-signup__message.is-bad { color: #b32d2e; }
-.loreport-signup.is-done .loreport-signup__fields,
-.loreport-signup.is-done .loreport-signup__consent { display: none; }
-.loreport-signup__trap { position: absolute !important; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
-.loreport-signup__setup { padding: .75em 1em; border: 1px dashed currentColor; opacity: .8; }
-.loreport-signup form[aria-busy="true"] button { opacity: .6; cursor: progress; }
+/*
+ * LorePort signup form.
+ *
+ * Takes its fonts and text colour from the site, and mixes its borders and
+ * backgrounds from the text colour, so it suits light and dark themes alike.
+ * Every rule uses :where(), so a theme's own styles (such as its button
+ * style) win without a fight.
+ *
+ * To restyle, set these on .loreport-signup (or any parent):
+ *   --loreport-accent         button and focus ring (default: the theme's primary colour, or a deep blue)
+ *   --loreport-accent-text    text on the button (default: white)
+ *   --loreport-radius         the card's corners (default: 12px)
+ *   --loreport-field-radius   field and button corners (default: 8px)
+ *   --loreport-surface        the card's background
+ *   --loreport-line           borders
+ */
+
+:where(.loreport-signup) {
+	--loreport-accent: var(--wp--preset--color--primary, #3f4fb8);
+	--loreport-accent-text: #fff;
+	--loreport-radius: 12px;
+	--loreport-field-radius: 8px;
+	--loreport-line: color-mix(in srgb, currentColor 16%, transparent);
+	--loreport-surface: color-mix(in srgb, currentColor 4%, transparent);
+	--loreport-field-bg: color-mix(in srgb, currentColor 3%, transparent);
+	--loreport-good: #1a7f4b;
+	--loreport-bad: #b42318;
+	box-sizing: border-box;
+	max-width: 40rem;
+	margin-block: 1.5em;
+}
+
+:where(.loreport-signup *, .loreport-signup *::before, .loreport-signup *::after) {
+	box-sizing: inherit;
+}
+
+/* Card: a soft panel. Plain: just the fields. */
+:where(.loreport-signup--card) {
+	padding: clamp(1.1rem, 3vw, 1.75rem);
+	border: 1px solid var(--loreport-line);
+	border-radius: var(--loreport-radius);
+	background: var(--loreport-surface);
+}
+
+:where(.loreport-signup__form) {
+	display: grid;
+	gap: .9rem;
+	margin: 0;
+}
+
+:where(.loreport-signup__header) {
+	display: grid;
+	gap: .3rem;
+}
+
+:where(.loreport-signup__title) {
+	margin: 0;
+	font-size: 1.2em;
+	font-weight: 650;
+	line-height: 1.25;
+}
+
+:where(.loreport-signup__description) {
+	margin: 0;
+	line-height: 1.5;
+	opacity: .78;
+}
+
+/* Fields sit side by side when there's room. */
+:where(.loreport-signup__fields) {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+	gap: .75rem;
+	align-items: end;
+}
+
+:where(.loreport-signup__field) {
+	display: grid;
+	gap: .35rem;
+	margin: 0;
+}
+
+:where(.loreport-signup__field label) {
+	font-size: .9em;
+	font-weight: 600;
+}
+
+:where(.loreport-signup__optional) {
+	font-weight: 400;
+	opacity: .65;
+}
+
+:where(.loreport-signup__field input) {
+	width: 100%;
+	min-height: 2.9em;
+	margin: 0;
+	padding: .65em .85em;
+	border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+	border-radius: var(--loreport-field-radius);
+	background: var(--loreport-field-bg);
+	color: inherit;
+	font: inherit;
+	line-height: 1.3;
+	transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+:where(.loreport-signup__field input::placeholder) {
+	color: currentColor;
+	opacity: .45;
+}
+
+:where(.loreport-signup__field input:focus) {
+	outline: none;
+	border-color: var(--loreport-accent);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--loreport-accent) 25%, transparent);
+}
+
+/* The button spans the row in the stacked layout. */
+:where(.loreport-signup__submit) {
+	grid-column: 1 / -1;
+	margin: 0;
+}
+
+:where(.loreport-signup__button) {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: .5em;
+	min-height: 2.9em;
+	padding: .65em 1.4em;
+	border: 0;
+	border-radius: var(--loreport-field-radius);
+	background: var(--loreport-accent);
+	color: var(--loreport-accent-text);
+	font: inherit;
+	font-weight: 600;
+	line-height: 1.2;
+	cursor: pointer;
+	transition: filter .15s ease, transform .05s ease;
+}
+
+:where(.loreport-signup__button:hover) {
+	filter: brightness(1.08);
+}
+
+:where(.loreport-signup__button:active) {
+	transform: translateY(1px);
+}
+
+:where(.loreport-signup__button:focus-visible) {
+	outline: 2px solid var(--loreport-accent);
+	outline-offset: 2px;
+}
+
+/* A spinner while the form is being sent. */
+:where(.loreport-signup__form[aria-busy="true"] .loreport-signup__button) {
+	pointer-events: none;
+	opacity: .85;
+}
+
+:where(.loreport-signup__form[aria-busy="true"] .loreport-signup__button)::after {
+	content: "";
+	width: 1em;
+	height: 1em;
+	border: 2px solid currentColor;
+	border-right-color: transparent;
+	border-radius: 50%;
+	animation: loreport-spin .7s linear infinite;
+}
+
+@keyframes loreport-spin {
+	to { transform: rotate(360deg); }
+}
+
+:where(.loreport-signup__consent) {
+	margin: 0;
+	font-size: .85em;
+	line-height: 1.45;
+	opacity: .7;
+}
+
+/* Inline: email and button on one line. Labels stay for screen readers. */
+:where(.loreport-signup--inline .loreport-signup__fields) {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: stretch;
+	gap: .5rem;
+}
+
+:where(.loreport-signup--inline .loreport-signup__field) {
+	flex: 1 1 12rem;
+}
+
+:where(.loreport-signup--inline .loreport-signup__submit) {
+	display: flex;
+	flex: 0 0 auto;
+}
+
+:where(.loreport-signup--inline .loreport-signup__field label) {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+@media (max-width: 30rem) {
+	:where(.loreport-signup--inline .loreport-signup__submit, .loreport-signup--inline .loreport-signup__button) {
+		flex: 1 1 100%;
+		width: 100%;
+	}
+}
+
+/* Hidden from people; bots fill it in. */
+:where(.loreport-signup__trap) {
+	position: absolute !important;
+	left: -9999px !important;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+/* The answer after sending; hidden until there is one. */
+:where(.loreport-signup__message) {
+	display: none;
+	align-items: flex-start;
+	gap: .6rem;
+	padding: .75rem .9rem;
+	border-radius: var(--loreport-field-radius);
+	line-height: 1.45;
+}
+
+:where(.loreport-signup__message.is-good, .loreport-signup__message.is-bad) {
+	display: flex;
+}
+
+:where(.loreport-signup__message.is-good) {
+	border: 1px solid color-mix(in srgb, var(--loreport-good) 30%, transparent);
+	background: color-mix(in srgb, var(--loreport-good) 10%, transparent);
+	color: var(--loreport-good);
+}
+
+:where(.loreport-signup__message.is-bad) {
+	border: 1px solid color-mix(in srgb, var(--loreport-bad) 28%, transparent);
+	background: color-mix(in srgb, var(--loreport-bad) 8%, transparent);
+	color: var(--loreport-bad);
+}
+
+:where(.loreport-signup__check) {
+	flex: 0 0 auto;
+	width: 1.4em;
+	height: 1.4em;
+}
+
+:where(.loreport-signup__message.is-bad .loreport-signup__check) {
+	display: none;
+}
+
+/* Once signed up, the fields step aside and the answer takes their place. */
+:where(.loreport-signup.is-done .loreport-signup__fields, .loreport-signup.is-done .loreport-signup__consent) {
+	display: none;
+}
+
+/* Opt-in checkboxes (comment form, Statamic forms). */
+:where(.comment-form-loreport label, .loreport-optin) {
+	display: flex;
+	align-items: flex-start;
+	gap: .55em;
+	line-height: 1.45;
+}
+
+:where(.comment-form-loreport input[type="checkbox"], .loreport-optin input[type="checkbox"]) {
+	flex: 0 0 auto;
+	width: 1.1em;
+	height: 1.1em;
+	margin: .18em 0 0;
+	accent-color: var(--loreport-accent, currentColor);
+}
+
+/* Only admins see this, when the form isn't set up yet. */
+:where(.loreport-signup__setup) {
+	padding: .75em 1em;
+	border: 1px dashed currentColor;
+	border-radius: 8px;
+	opacity: .8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:where(.loreport-signup *) {
+		transition: none !important;
+	}
+
+	:where(.loreport-signup__form[aria-busy="true"] .loreport-signup__button)::after {
+		animation-duration: 2s;
+	}
+}

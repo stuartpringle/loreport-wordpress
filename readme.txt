@@ -4,7 +4,7 @@ Tags: newsletter, email, signup form, mailing list, authors
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 0.2.0
+Stable tag: 0.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -56,6 +56,9 @@ Yes, with the `loreport_signup_message` filter (it receives the message and a st
 Define `LOREPORT_API_URL` in wp-config.php, or use the `loreport_api_url` filter.
 
 == Changelog ==
+
+= 0.2.1 =
+* The signup form's designed styles (card and plain looks, inline layout, focus rings, spinner, success and error panels) now ship with the plugin; 0.2.0 had the new markup but the old stylesheet.
 
 = 0.2.0 =
 * Comment signups wait until the comment is approved; spam never signs anyone up.
