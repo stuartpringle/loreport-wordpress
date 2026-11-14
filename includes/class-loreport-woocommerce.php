@@ -17,7 +17,7 @@ class LorePort_WooCommerce {
 	const FIELD = 'loreport/subscribe';
 
 	public static function init(): void {
-		if ( ! class_exists( 'WooCommerce' ) || ! LorePort_Settings::checkbox( 'woocommerce' )['enabled'] ) {
+		if ( ! class_exists( 'WooCommerce' ) || ! LorePort_Settings::enabled( 'woocommerce' ) ) {
 			return;
 		}
 

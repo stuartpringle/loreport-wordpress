@@ -33,6 +33,15 @@ class LorePort_Settings {
 	}
 
 	/**
+	 * Whether an opt-in checkbox is on. Safe to call before translations load.
+	 *
+	 * @param string $where "comments" or "woocommerce".
+	 */
+	public static function enabled( string $where ): bool {
+		return ! empty( ( (array) get_option( 'loreport_' . $where, array() ) )['enabled'] );
+	}
+
+	/**
 	 * Settings for an opt-in checkbox (comments or woocommerce).
 	 *
 	 * @param string $where "comments" or "woocommerce".

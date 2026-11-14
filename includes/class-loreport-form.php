@@ -20,7 +20,6 @@ class LorePort_Form {
 		add_shortcode( 'loreport_signup', array( __CLASS__, 'shortcode' ) );
 		add_action( 'init', array( __CLASS__, 'register_block' ) );
 		add_action( 'init', array( __CLASS__, 'register_assets' ) );
-		load_plugin_textdomain( 'loreport', false, dirname( plugin_basename( LOREPORT_FILE ) ) . '/languages' );
 	}
 
 	public static function register_assets(): void {

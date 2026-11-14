@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 class LorePort_Comments {
 
 	public static function init(): void {
-		if ( ! LorePort_Settings::checkbox( 'comments' )['enabled'] ) {
+		if ( ! LorePort_Settings::enabled( 'comments' ) ) {
 			return;
 		}
 		add_filter( 'comment_form_submit_field', array( __CLASS__, 'field' ) );

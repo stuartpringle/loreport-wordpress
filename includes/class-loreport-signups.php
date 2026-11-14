@@ -192,7 +192,7 @@ class LorePort_Signups {
 		$token   = isset( $_POST['loreport_token'] ) ? self::read_token( sanitize_text_field( wp_unslash( $_POST['loreport_token'] ) ) ) : null;
 		$email   = isset( $_POST['loreport_email'] ) ? sanitize_email( wp_unslash( $_POST['loreport_email'] ) ) : '';
 		$name    = isset( $_POST['loreport_name'] ) ? sanitize_text_field( wp_unslash( $_POST['loreport_name'] ) ) : '';
-		$trap    = isset( $_POST['loreport_website'] ) ? (string) wp_unslash( $_POST['loreport_website'] ) : '';
+		$trap    = isset( $_POST['loreport_website'] ) ? sanitize_text_field( wp_unslash( $_POST['loreport_website'] ) ) : '';
 		$page    = isset( $_POST['loreport_page'] ) ? absint( $_POST['loreport_page'] ) : 0;
 		// phpcs:enable
 
