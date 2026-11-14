@@ -4,7 +4,7 @@ Tags: newsletter, email, signup form, mailing list, authors
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 0.2.3
+Stable tag: 0.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,14 +19,16 @@ Newsletter signup forms for LorePort authors: a signup block and shortcode, and 
 * **Comment form and WooCommerce checkout checkboxes**, never ticked in advance, so commenters and customers can choose to join a list. Works with both the classic and the block checkout.
 * **No lost signups.** If LorePort can't be reached for a moment, signups wait on your site and are retried automatically.
 * **Spam protection** without captchas: a hidden field, a time check, and a limit per visitor.
+* **A popup** on every page or just some, opened by any button or menu link to `#loreport-popup`, or on its own after a delay (at most once a month per visitor). It closes with Escape or a click outside and takes its colours from your page.
+* **LorePort in your admin:** an overview of your lists and recent newsletters (opens, clicks, bounces, spam complaints), a Subscribers page to find, add, edit, tag and unsubscribe people, and a dashboard widget with the newest subscribers.
 
-You need a LorePort account on a plan with API access, and an API key with the "Read pen names, lists and tags" and "Send signups" permissions.
+You need a LorePort account on a plan with API access, and an API key with the "Read pen names, lists and tags" and "Send signups" permissions. For the admin pages, add the permissions to read newsletters, read usage, and read and change subscribers.
 
 == External services ==
 
 This plugin connects to the LorePort API (https://loreport.ca/api/v1), the service that manages your mailing list. It's needed to sign readers up and to show your lists in the settings and block editor.
 
-* **When:** when you save or test your settings or open the block editor (to load your lists), and whenever a reader submits a signup form or ticks a newsletter box when commenting or checking out.
+* **When:** when you save or test your settings or open the block editor (to load your lists), whenever a reader submits a signup form or ticks a newsletter box when commenting or checking out, and when an administrator opens the LorePort pages or the dashboard widget, or changes a subscriber there.
 * **What is sent:** your API key with every request; for signups, the reader's email address, their name if given, their IP address, their browser's user agent, the list, the consent wording and where on your site they signed up.
 * LorePort's terms: https://loreport.ca/terms. LorePort's API documentation: https://loreport.ca/docs/api.
 
@@ -35,7 +37,7 @@ This plugin connects to the LorePort API (https://loreport.ca/api/v1), the servi
 1. Install and activate the plugin.
 2. In LorePort, go to Settings → API and webhooks and make a key with the "Read pen names, lists and tags" and "Send signups" permissions.
 3. In WordPress, go to Settings → LorePort, paste the key, choose a default list, and save. Use "Test the connection" to check it.
-4. Add the "LorePort signup" block to a page, or use `[loreport_signup]`.
+4. Add the "LorePort signup" block to a page, or use `[loreport_signup]`. For a popup, switch it on under Settings → LorePort → Popup, and link any button or menu item to `#loreport-popup`.
 
 == Frequently Asked Questions ==
 
@@ -56,6 +58,11 @@ Yes, with the `loreport_signup_message` filter (it receives the message and a st
 Define `LOREPORT_API_URL` in wp-config.php, or use the `loreport_api_url` filter.
 
 == Changelog ==
+
+= 0.3.0 =
+* A signup popup: switch it on for every page in Settings → LorePort, or place it with [loreport_popup]. Any button or menu link to #loreport-popup opens it, and so does [loreport_popup_button]. It can also open on its own after a delay, at most once a month per visitor.
+* A LorePort menu in the admin: an overview (lists with subscriber counts, recent newsletters with opens, clicks, bounces and spam complaints, plan usage) and a Subscribers page (search, filter by list and status, add someone, fix a name or email, tags, unsubscribe).
+* A dashboard widget with totals and the newest subscribers.
 
 = 0.2.3 =
 * Name and email fields side by side always line up (their labels and boxes share rows), whatever the browser or extensions add.

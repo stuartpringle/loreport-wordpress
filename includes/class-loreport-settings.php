@@ -85,6 +85,14 @@ class LorePort_Settings {
 				'sanitize_callback' => array( __CLASS__, 'sanitize_list_id' ),
 			)
 		);
+		register_setting(
+			self::PAGE,
+			LorePort_Popup::OPTION,
+			array(
+				'type'              => 'array',
+				'sanitize_callback' => array( 'LorePort_Popup', 'sanitize' ),
+			)
+		);
 		foreach ( array( 'comments', 'woocommerce' ) as $where ) {
 			register_setting(
 				self::PAGE,
@@ -244,6 +252,39 @@ class LorePort_Settings {
 					</table>
 				<?php endforeach; ?>
 
+				<?php $popup = LorePort_Popup::settings(); ?>
+				<h2><?php esc_html_e( 'Popup', 'loreport' ); ?></h2>
+				<p><?php esc_html_e( 'A signup form that opens over the page. Any button or menu link that points to #loreport-popup opens it (in a Button block, set the link to #loreport-popup), and so does the [loreport_popup_button] shortcode.', 'loreport' ); ?></p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'On every page', 'loreport' ); ?></th>
+						<td><label><input type="checkbox" name="loreport_popup[enabled]" value="1" <?php checked( $popup['enabled'] ); ?>> <?php esc_html_e( 'Add the popup to every page of the site', 'loreport' ); ?></label></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="loreport_popup_list"><?php esc_html_e( 'List', 'loreport' ); ?></label></th>
+						<td><?php self::list_select( 'loreport_popup[list]', 'loreport_popup_list', $popup['list'], $lists, true ); ?></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="loreport_popup_title"><?php esc_html_e( 'Heading', 'loreport' ); ?></label></th>
+						<td><input type="text" id="loreport_popup_title" name="loreport_popup[title]" class="regular-text" value="<?php echo esc_attr( $popup['title'] ); ?>" placeholder="<?php esc_attr_e( 'Join the newsletter', 'loreport' ); ?>"></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="loreport_popup_description"><?php esc_html_e( 'Description', 'loreport' ); ?></label></th>
+						<td><input type="text" id="loreport_popup_description" name="loreport_popup[description]" class="large-text" value="<?php echo esc_attr( $popup['description'] ); ?>" placeholder="<?php esc_attr_e( 'New books first, early chapters and the occasional giveaway.', 'loreport' ); ?>"></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="loreport_popup_button"><?php esc_html_e( 'Button text', 'loreport' ); ?></label></th>
+						<td><input type="text" id="loreport_popup_button" name="loreport_popup[button]" class="regular-text" value="<?php echo esc_attr( $popup['button'] ); ?>" placeholder="<?php esc_attr_e( 'Subscribe', 'loreport' ); ?>"></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="loreport_popup_delay"><?php esc_html_e( 'Open on its own', 'loreport' ); ?></label></th>
+						<td>
+							<input type="number" id="loreport_popup_delay" name="loreport_popup[delay]" class="small-text" min="0" max="600" value="<?php echo esc_attr( (string) $popup['delay'] ); ?>"> <?php esc_html_e( 'seconds after the page loads (0: only when someone clicks a button)', 'loreport' ); ?>
+							<p class="description"><?php esc_html_e( 'Once someone closes it or signs up, it won\'t open on its own for them again for 30 days.', 'loreport' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
 				<?php submit_button(); ?>
 			</form>
 
@@ -259,6 +300,7 @@ class LorePort_Settings {
 			<p><?php esc_html_e( 'Add the "LorePort signup" block in the editor, or use the shortcode anywhere shortcodes work:', 'loreport' ); ?></p>
 			<p><code>[loreport_signup]</code> &nbsp; <code>[loreport_signup list="LIST_ID" title="Join the readers' list" description="New books, early chapters and giveaways." layout="inline" style="plain" name="no" button="Join"]</code></p>
 			<p class="description"><?php esc_html_e( 'layout: stacked or inline (email and button on one line). style: card (a soft panel) or plain.', 'loreport' ); ?></p>
+			<p><?php esc_html_e( 'A popup on one page only, and a button to open it:', 'loreport' ); ?> <code>[loreport_popup title="Join the newsletter" delay="20"]</code> &nbsp; <code>[loreport_popup_button text="Get the newsletter"]</code></p>
 			<?php if ( $lists ) : ?>
 				<table class="widefat striped" style="max-width:720px">
 					<thead><tr><th><?php esc_html_e( 'List', 'loreport' ); ?></th><th><?php esc_html_e( 'List ID', 'loreport' ); ?></th><th><?php esc_html_e( 'Confirms by email', 'loreport' ); ?></th></tr></thead>

@@ -1,0 +1,32 @@
+/* LorePort admin pages and dashboard widget. */
+.loreport-admin .loreport-table { max-width: 1100px; margin-top: .5em; }
+.loreport-admin .loreport-table th.num, .loreport-admin .loreport-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.loreport-admin h2 { margin-top: 1.8em; }
+.loreport-dot { display: inline-block; width: .75em; height: .75em; border-radius: 50%; vertical-align: -.05em; margin-right: .3em; }
+.loreport-badge { display: inline-block; padding: .1em .6em; border-radius: 999px; background: #f0f0f1; color: #3c434a; font-size: 12px; line-height: 1.7; white-space: nowrap; }
+.loreport-badge--subscribed { background: #e7f6ec; color: #116329; }
+.loreport-badge--pending { background: #fcf3e3; color: #8a5300; }
+.loreport-badge--unsubscribed { background: #f0f0f1; color: #646970; }
+.loreport-pill { display: inline-block; margin: 0 .25em .25em 0; padding: 0 .6em; border: 1px solid #dcdcde; border-radius: 999px; font-size: 12px; line-height: 1.8; }
+.loreport-pill.is-off { text-decoration: line-through; opacity: .6; }
+.loreport-filters { display: flex; flex-wrap: wrap; gap: .5em; align-items: center; margin: 1em 0 .5em; }
+.loreport-filters input[type="search"] { min-width: 16em; }
+.loreport-count { margin-left: auto; color: #646970; }
+.loreport-pages { display: flex; gap: 1em; align-items: center; }
+.loreport-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(22em, 1fr)); gap: 2em; max-width: 1100px; }
+.loreport-tags { display: flex; flex-wrap: wrap; gap: .4em; margin: .5em 0 1em; }
+.loreport-tag { display: inline-flex; align-items: center; gap: .3em; padding: 0 .3em 0 .7em; border: 1px solid #dcdcde; border-radius: 999px; }
+.loreport-tag .button-link { padding: 0 .35em; font-size: 16px; line-height: 1.4; text-decoration: none; }
+.loreport-danger, .loreport-danger.button { color: #b32d2e; }
+.loreport-danger.button { border-color: #b32d2e; }
+.loreport-unsubscribe-all { margin-top: 2.5em; }
+.loreport-widget__totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75em; margin-bottom: .75em; }
+.loreport-widget__totals strong { display: block; font-size: 22px; line-height: 1.2; font-weight: 500; }
+.loreport-widget__totals span { color: #646970; font-size: 12px; }
+.loreport-widget h3 { margin: 1em 0 .4em; font-size: 13px; color: #646970; }
+.loreport-widget__people { margin: 0; }
+.loreport-widget__people li { display: flex; justify-content: space-between; gap: .75em; padding: .4em 0; border-top: 1px solid #f0f0f1; }
+.loreport-widget__people li > span { display: flex; flex-direction: column; min-width: 0; }
+.loreport-widget__people li > span:last-child { align-items: flex-end; flex-shrink: 0; }
+.loreport-widget__people small { color: #646970; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.loreport-widget__links { margin-bottom: 0; }

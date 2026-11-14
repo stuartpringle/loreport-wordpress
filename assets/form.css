@@ -125,6 +125,11 @@
 	box-shadow: 0 0 0 3px color-mix(in srgb, var(--loreport-accent) 25%, transparent);
 }
 
+/* With the email field alone, it takes the whole row. */
+:where(.loreport-signup__fields:not(:has(.loreport-signup__field--name))) {
+	grid-template-columns: 1fr;
+}
+
 /* The button spans the row in the stacked layout. */
 :where(.loreport-signup__submit) {
 	grid-column: 1 / -1;
@@ -318,4 +323,124 @@
 	:where(.loreport-signup__form[aria-busy="true"] .loreport-signup__button)::after {
 		animation-duration: 2s;
 	}
+}
+
+/*
+ * Popup: a <dialog> with the form inside. Its panel borrows the page's
+ * background (form.js); set --loreport-popup-bg on the dialog to choose one.
+ */
+/* Real specificity here: themes space out page content (margins on every
+   block), and the dialog must stay centred whatever they do. */
+dialog.loreport-popup {
+	box-sizing: border-box;
+	width: min(34rem, calc(100vw - 2rem));
+	max-width: none;
+	height: fit-content;
+	max-height: calc(100dvh - 2rem);
+	inset: 0;
+	/* !important: block themes zero the first and last child's margins with
+	   stronger selectors, which would pin the popup to the top. */
+	margin: auto !important;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	overflow: visible;
+}
+
+dialog.loreport-popup:not([open]) {
+	display: none;
+}
+
+dialog.loreport-popup::backdrop {
+	background: rgb(10 12 20 / .62);
+	backdrop-filter: blur(3px);
+}
+
+:where(.loreport-popup__panel) {
+	position: relative;
+	max-height: calc(100dvh - 2rem);
+	overflow: auto;
+	padding: clamp(1.25rem, 4vw, 2rem);
+	border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+	border-radius: var(--loreport-radius, 14px);
+	background: var(--loreport-popup-bg, Canvas);
+	box-shadow: 0 24px 60px rgb(0 0 0 / .35);
+}
+
+/* Inside the popup the form needs no card of its own. */
+:where(.loreport-popup .loreport-signup) {
+	max-width: none;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+}
+
+:where(.loreport-popup .loreport-signup__title) {
+	padding-right: 2.25rem;
+	font-size: 1.4em;
+}
+
+:where(.loreport-popup__close) {
+	position: absolute;
+	top: .6rem;
+	right: .6rem;
+	display: grid;
+	place-items: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-size: 1.6rem;
+	line-height: 1;
+	opacity: .65;
+	cursor: pointer;
+}
+
+:where(.loreport-popup__close:hover, .loreport-popup__close:focus-visible) {
+	background: color-mix(in srgb, currentColor 10%, transparent);
+	opacity: 1;
+}
+
+:where(html.loreport-popup-open) {
+	overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	dialog.loreport-popup[open] .loreport-popup__panel {
+		animation: loreport-pop .18s ease-out;
+	}
+
+	dialog.loreport-popup[open]::backdrop {
+		animation: loreport-fade .18s ease-out;
+	}
+}
+
+@keyframes loreport-pop {
+	from { opacity: 0; transform: translateY(8px) scale(.98); }
+}
+
+@keyframes loreport-fade {
+	from { opacity: 0; }
+}
+
+/* A ready-made button to open the popup ([loreport_popup_button] / {{ loreport:popup_button }}). */
+:where(.loreport-popup-button) {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 2.9em;
+	padding: .65em 1.4em;
+	border: 0;
+	border-radius: var(--loreport-field-radius, 8px);
+	background: var(--loreport-accent, var(--wp--preset--color--primary, #3f4fb8));
+	color: var(--loreport-accent-text, #fff);
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
 }
