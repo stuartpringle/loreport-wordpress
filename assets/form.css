@@ -1,0 +1,18 @@
+/* LorePort signup form: deliberately plain, so it takes on the theme's look. */
+.loreport-signup__form { margin: 0; }
+.loreport-signup__title { font-weight: 600; margin: 0 0 .5em; }
+.loreport-signup__fields { display: flex; flex-wrap: wrap; gap: .75em; align-items: flex-end; }
+.loreport-signup__field { flex: 1 1 14em; margin: 0; }
+.loreport-signup__field label { display: block; margin-bottom: .25em; }
+.loreport-signup__field input { box-sizing: border-box; width: 100%; }
+.loreport-signup__optional { opacity: .7; font-weight: normal; }
+.loreport-signup__submit { margin: 0; }
+.loreport-signup__consent { font-size: .875em; opacity: .8; margin: .75em 0 0; }
+.loreport-signup__message { margin: .75em 0 0; font-weight: 600; }
+.loreport-signup__message:empty { display: none; }
+.loreport-signup__message.is-bad { color: #b32d2e; }
+.loreport-signup.is-done .loreport-signup__fields,
+.loreport-signup.is-done .loreport-signup__consent { display: none; }
+.loreport-signup__trap { position: absolute !important; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.loreport-signup__setup { padding: .75em 1em; border: 1px dashed currentColor; opacity: .8; }
+.loreport-signup form[aria-busy="true"] button { opacity: .6; cursor: progress; }
