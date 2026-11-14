@@ -74,15 +74,24 @@
 	align-items: end;
 }
 
+/* Labels share one row and boxes the next (a subgrid), so side-by-side
+   fields line up whatever is inside them. */
 :where(.loreport-signup__field) {
 	display: grid;
-	gap: .35rem;
+	grid-row: span 2;
+	grid-template-rows: subgrid;
+	row-gap: .35rem;
+	align-items: end;
 	margin: 0;
+	padding: 0;
 }
 
 :where(.loreport-signup__field label) {
+	display: block;
+	margin: 0;
 	font-size: .9em;
 	font-weight: 600;
+	line-height: 1.3;
 }
 
 :where(.loreport-signup__optional) {
@@ -91,8 +100,9 @@
 }
 
 :where(.loreport-signup__field input) {
+	display: block;
 	width: 100%;
-	min-height: 2.9em;
+	height: 2.9em;
 	margin: 0;
 	padding: .65em .85em;
 	border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
@@ -193,6 +203,7 @@
 }
 
 :where(.loreport-signup--inline .loreport-signup__field) {
+	display: block;
 	flex: 1 1 12rem;
 }
 

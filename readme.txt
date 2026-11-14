@@ -4,7 +4,7 @@ Tags: newsletter, email, signup form, mailing list, authors
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 0.2.2
+Stable tag: 0.2.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -56,6 +56,9 @@ Yes, with the `loreport_signup_message` filter (it receives the message and a st
 Define `LOREPORT_API_URL` in wp-config.php, or use the `loreport_api_url` filter.
 
 == Changelog ==
+
+= 0.2.3 =
+* Name and email fields side by side always line up (their labels and boxes share rows), whatever the browser or extensions add.
 
 = 0.2.2 =
 * Signup forms have a consent checkbox (unticked, required) with the list's consent statement, or a plain one if the list has none. The form isn't sent without it.
