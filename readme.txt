@@ -4,7 +4,7 @@ Tags: newsletter, email, signup form, mailing list, authors
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 0.3.0
+Stable tag: 0.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,9 @@ Yes, with the `loreport_signup_message` filter (it receives the message and a st
 Define `LOREPORT_API_URL` in wp-config.php, or use the `loreport_api_url` filter.
 
 == Changelog ==
+
+= 0.3.1 =
+* Adding someone in the admin records that they agreed and how (with an optional confirmation email first), instead of treating them as a website signup.
 
 = 0.3.0 =
 * A signup popup: switch it on for every page in Settings → LorePort, or place it with [loreport_popup]. Any button or menu link to #loreport-popup opens it, and so does [loreport_popup_button]. It can also open on its own after a delay, at most once a month per visitor.

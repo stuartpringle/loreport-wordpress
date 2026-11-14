@@ -550,13 +550,13 @@ class LorePort_Admin {
 								<option value="<?php echo esc_attr( (string) $list['id'] ); ?>" <?php selected( LorePort_Settings::default_list(), (string) $list['id'] ); ?>><?php echo esc_html( (string) ( $list['name'] ?? '' ) ); ?></option>
 							<?php endforeach; ?>
 						</select></td></tr>
-					<tr><th scope="row"><?php esc_html_e( 'How', 'loreport' ); ?></th>
+					<tr><th scope="row"><?php esc_html_e( 'Consent', 'loreport' ); ?></th>
 						<td>
-							<p><label><input type="radio" name="mode" value="confirm" checked> <strong><?php esc_html_e( 'Send them a confirmation email', 'loreport' ); ?></strong></label><br>
-								<span class="description"><?php esc_html_e( 'They\'re added once they click the link (lists without double opt-in add them straight away).', 'loreport' ); ?></span></p>
-							<p><label><input type="radio" name="mode" value="agreed"> <strong><?php esc_html_e( 'They\'ve already agreed to receive my emails', 'loreport' ); ?></strong></label><br>
-								<span class="description"><?php esc_html_e( 'Added as subscribed now. Canadian (CASL) and EU (GDPR) law need their consent: say how you got it.', 'loreport' ); ?></span></p>
-							<input type="text" name="consent_text" class="large-text" maxlength="1000" placeholder="<?php esc_attr_e( 'How they agreed, e.g. "Signed up at the Toronto book fair, Nov 8"', 'loreport' ); ?>">
+							<p><label><input type="checkbox" name="consent" value="1" required> <strong><?php esc_html_e( 'They agreed to receive my emails', 'loreport' ); ?></strong></label></p>
+							<p><input type="text" name="consent_text" class="large-text" maxlength="1000" required placeholder="<?php esc_attr_e( 'How they agreed, e.g. "Asked to join at the Toronto book fair, Nov 8"', 'loreport' ); ?>"></p>
+							<p class="description"><?php esc_html_e( 'Canadian (CASL) and EU (GDPR) law need their consent, and a record of how you got it. Don\'t add people from a contact list or a business card unless they asked to join.', 'loreport' ); ?></p>
+							<p><label><input type="checkbox" name="confirm" value="1"> <?php esc_html_e( 'Ask them to confirm by email first', 'loreport' ); ?></label><br>
+								<span class="description"><?php esc_html_e( 'They\'re added once they click the link in LorePort\'s confirmation email.', 'loreport' ); ?></span></p>
 						</td></tr>
 				</table>
 				<?php submit_button( __( 'Add', 'loreport' ) ); ?>
@@ -736,26 +736,33 @@ class LorePort_Admin {
 		$email   = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
 		$name    = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
 		$list    = isset( $_POST['list'] ) ? LorePort_Settings::sanitize_list_id( sanitize_text_field( wp_unslash( $_POST['list'] ) ) ) : '';
-		$agreed  = isset( $_POST['mode'] ) && 'agreed' === $_POST['mode'];
+		$agreed  = ! empty( $_POST['consent'] );
+		$confirm = ! empty( $_POST['confirm'] );
 		$consent = isset( $_POST['consent_text'] ) ? mb_substr( sanitize_text_field( wp_unslash( $_POST['consent_text'] ) ), 0, 1000 ) : '';
 		// phpcs:enable
 		if ( ! is_email( $email ) || '' === $list ) {
 			self::done( false, __( 'Please enter an email address and choose a list.', 'loreport' ) );
 		}
-		if ( $agreed && '' === $consent ) {
-			self::done( false, __( 'Say how they agreed, for example "Asked to join at the Toronto book fair".', 'loreport' ) );
+		if ( ! $agreed || '' === $consent ) {
+			self::done( false, __( 'You can only add people who agreed to receive your emails. Say how they agreed, for example "Asked to join at the Toronto book fair".', 'loreport' ) );
 		}
 
-		$body = array_filter(
-			array(
-				'email'   => $email,
-				'name'    => '' !== $name ? $name : null,
-				'list_id' => $list,
+		// Never /signups here: that would record a signup on the website.
+		$response = LorePort_Client::request(
+			'POST',
+			'subscribers',
+			array_filter(
+				array(
+					'email'        => $email,
+					'name'         => '' !== $name ? $name : null,
+					'list_id'      => $list,
+					'consent'      => true,
+					'consent_text' => $consent,
+					'confirm'      => $confirm,
+				),
+				fn( $value ) => null !== $value
 			)
 		);
-		$response = $agreed
-			? LorePort_Client::request( 'POST', 'subscribers', $body + array( 'consent' => true, 'consent_text' => $consent ) )
-			: LorePort_Client::request( 'POST', 'signups', $body + array( 'source' => 'wordpress:admin' ) );
 
 		if ( in_array( $response['status'], array( 200, 201 ), true ) ) {
 			$outcome = (string) ( $response['body']['outcome'] ?? '' );
