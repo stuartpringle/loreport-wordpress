@@ -305,7 +305,7 @@ class LorePort_Signups {
 
 	public static function admin_notice(): void {
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-		if ( ! current_user_can( 'manage_options' ) || ( $screen && 'settings_page_loreport' === $screen->id ) ) {
+		if ( ! current_user_can( 'manage_options' ) || ( $screen && str_ends_with( (string) $screen->id, '_page_loreport' ) ) ) {
 			return;
 		}
 		if ( '' === LorePort_Settings::api_key() ) {
@@ -313,7 +313,7 @@ class LorePort_Signups {
 				sprintf(
 					/* translators: %s: link to the settings page */
 					__( 'LorePort is almost ready: <a href="%s">add your API key</a>.', 'loreport' ),
-					esc_url( admin_url( 'options-general.php?page=' . LorePort_Settings::PAGE ) )
+					esc_url( admin_url( 'admin.php?page=' . LorePort_Settings::PAGE ) )
 				)
 			) . '</p></div>';
 		}

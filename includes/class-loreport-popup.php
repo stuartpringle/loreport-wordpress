@@ -1,6 +1,6 @@
 <?php
 /**
- * The signup popup: on every page (Settings → LorePort → Popup), or placed
+ * The signup popup: on every page (LorePort → Website → Popup), or placed
  * with [loreport_popup]; opened by [loreport_popup_button], any link to
  * #loreport-popup (a Button block, a menu item) or data-loreport-open.
  *

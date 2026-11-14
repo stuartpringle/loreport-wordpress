@@ -4,7 +4,7 @@ Tags: newsletter, email, signup form, mailing list, authors
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 0.3.1
+Stable tag: 0.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,15 +20,15 @@ Newsletter signup forms for LorePort authors: a signup block and shortcode, and 
 * **No lost signups.** If LorePort can't be reached for a moment, signups wait on your site and are retried automatically.
 * **Spam protection** without captchas: a hidden field, a time check, and a limit per visitor.
 * **A popup** on every page or just some, opened by any button or menu link to `#loreport-popup`, or on its own after a delay (at most once a month per visitor). It closes with Escape or a click outside and takes its colours from your page.
-* **LorePort in your admin:** an overview of your lists and recent newsletters (opens, clicks, bounces, spam complaints), a Subscribers page to find, add, edit, tag and unsubscribe people, and a dashboard widget with the newest subscribers.
+* **LorePort inside WordPress:** your Subscribers, Lists and Newsletters (writing, sections, layouts, scheduling and results) are LorePort's own pages, shown in the LorePort menu, so they're always the same as in LorePort. Plus a dashboard widget with the newest subscribers.
 
-You need a LorePort account on a plan with API access, and an API key with the "Read pen names, lists and tags" and "Send signups" permissions. For the admin pages, add the permissions to read newsletters, read usage, and read and change subscribers.
+You need a LorePort account on a plan with API access, and an API key with the "Read pen names, lists and tags" and "Send signups" permissions. To manage subscribers, lists and newsletters from WordPress, also give the key the "Show Subscribers, Lists and Newsletters inside your website" permission and enter your site's address on it.
 
 == External services ==
 
 This plugin connects to the LorePort API (https://loreport.ca/api/v1), the service that manages your mailing list. It's needed to sign readers up and to show your lists in the settings and block editor.
 
-* **When:** when you save or test your settings or open the block editor (to load your lists), whenever a reader submits a signup form or ticks a newsletter box when commenting or checking out, and when an administrator opens the LorePort pages or the dashboard widget, or changes a subscriber there.
+* **When:** when you save or test your settings or open the block editor (to load your lists), whenever a reader submits a signup form or ticks a newsletter box when commenting or checking out, and when an administrator opens the dashboard widget. The LorePort menu's pages are LorePort itself, shown in a frame: WordPress asks LorePort for a one-time sign-in link with your API key, and everything in the frame goes straight between your browser and LorePort.
 * **What is sent:** your API key with every request; for signups, the reader's email address, their name if given, their IP address, their browser's user agent, the list, the consent wording and where on your site they signed up.
 * LorePort's terms: https://loreport.ca/terms. LorePort's API documentation: https://loreport.ca/docs/api.
 
@@ -36,8 +36,8 @@ This plugin connects to the LorePort API (https://loreport.ca/api/v1), the servi
 
 1. Install and activate the plugin.
 2. In LorePort, go to Settings → API and webhooks and make a key with the "Read pen names, lists and tags" and "Send signups" permissions.
-3. In WordPress, go to Settings → LorePort, paste the key, choose a default list, and save. Use "Test the connection" to check it.
-4. Add the "LorePort signup" block to a page, or use `[loreport_signup]`. For a popup, switch it on under Settings → LorePort → Popup, and link any button or menu item to `#loreport-popup`.
+3. In WordPress, go to LorePort → Website, paste the key, choose a default list, and save. Use "Test the connection" to check it.
+4. Add the "LorePort signup" block to a page, or use `[loreport_signup]`. For a popup, switch it on under LorePort → Website → Popup, and link any button or menu item to `#loreport-popup`.
 
 == Frequently Asked Questions ==
 
@@ -58,6 +58,10 @@ Yes, with the `loreport_signup_message` filter (it receives the message and a st
 Define `LOREPORT_API_URL` in wp-config.php, or use the `loreport_api_url` filter.
 
 == Changelog ==
+
+= 0.4.0 =
+* Subscribers, Lists and Newsletters are now LorePort's own pages, shown inside WordPress (LorePort menu): everything you do in LorePort's back end except pen names, plan, billing and sending setup, always up to date with LorePort. Needs the key's "Show Subscribers, Lists and Newsletters inside your website" permission and this site's address on the key.
+* Settings moved to LorePort → Website.
 
 = 0.3.1 =
 * Adding someone in the admin records that they agreed and how (with an optional confirmation email first), instead of treating them as a website signup.

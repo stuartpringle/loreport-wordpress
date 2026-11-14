@@ -30,3 +30,8 @@
 .loreport-widget__people li > span:last-child { align-items: flex-end; flex-shrink: 0; }
 .loreport-widget__people small { color: #646970; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .loreport-widget__links { margin-bottom: 0; }
+/* Embedded LorePort pages. */
+.loreport-embedded { margin: 10px 20px 0 2px; }
+.loreport-frame iframe { display: block; width: 100%; min-height: 480px; border: 1px solid #dcdcde; border-radius: 8px; background: #fff; }
+.loreport-frame__loading { display: flex; align-items: center; gap: .3em; color: #646970; }
+.loreport-frame__loading .spinner { float: none; margin: 0; }

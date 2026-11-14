@@ -1,6 +1,6 @@
 <?php
 /**
- * The Settings → LorePort page.
+ * The LorePort → Website page: connection, forms, popup and opt-in settings.
  *
  * @package LorePort
  */
@@ -18,7 +18,6 @@ class LorePort_Settings {
 	const NEEDED = array( 'lists:read', 'signups:write' );
 
 	public static function init(): void {
-		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 		add_action( 'admin_init', array( __CLASS__, 'register' ) );
 		add_action( 'admin_post_loreport_test_connection', array( __CLASS__, 'test_connection' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( LOREPORT_FILE ), array( __CLASS__, 'action_links' ) );
@@ -57,12 +56,8 @@ class LorePort_Settings {
 		);
 	}
 
-	public static function menu(): void {
-		add_options_page( __( 'LorePort', 'loreport' ), __( 'LorePort', 'loreport' ), 'manage_options', self::PAGE, array( __CLASS__, 'render' ) );
-	}
-
 	public static function action_links( array $links ): array {
-		array_unshift( $links, '<a href="' . esc_url( admin_url( 'options-general.php?page=' . self::PAGE ) ) . '">' . esc_html__( 'Settings', 'loreport' ) . '</a>' );
+		array_unshift( $links, '<a href="' . esc_url( admin_url( 'admin.php?page=' . self::PAGE ) ) . '">' . esc_html__( 'Settings', 'loreport' ) . '</a>' );
 
 		return $links;
 	}
@@ -166,7 +161,7 @@ class LorePort_Settings {
 		}
 		set_transient( 'loreport_test_result_' . get_current_user_id(), $result, MINUTE_IN_SECONDS );
 
-		wp_safe_redirect( admin_url( 'options-general.php?page=' . self::PAGE ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE ) );
 		exit;
 	}
 
@@ -181,8 +176,9 @@ class LorePort_Settings {
 		$queued = count( LorePort_Signups::queue() );
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'LorePort', 'loreport' ); ?></h1>
-			<?php settings_errors( 'loreport_api_key' ); ?>
+			<h1><?php esc_html_e( 'LorePort on your website', 'loreport' ); ?></h1>
+			<p class="description" style="max-width:52em"><?php esc_html_e( 'Connect your LorePort account, then add signup forms and a popup to your site. Your subscribers, lists and newsletters are under LorePort in the menu: they\'re LorePort\'s own pages, shown here.', 'loreport' ); ?></p>
+			<?php settings_errors(); ?>
 			<?php if ( is_array( $result ) ) : ?>
 				<div class="notice <?php echo $result['ok'] ? 'notice-success' : 'notice-error'; ?>"><p><?php echo esc_html( $result['message'] ); ?></p></div>
 			<?php endif; ?>
@@ -208,7 +204,7 @@ class LorePort_Settings {
 								<?php
 								printf(
 									/* translators: %s: link to LorePort's API settings */
-									esc_html__( 'Make one in LorePort under %s, with the "Read pen names, lists and tags" and "Send signups" permissions.', 'loreport' ),
+									esc_html__( 'Make one in LorePort under %s with the "Read pen names, lists and tags" and "Send signups" permissions. To manage subscribers, lists and newsletters from here too, also tick "Show Subscribers, Lists and Newsletters inside your website" and enter this site\'s address.', 'loreport' ),
 									'<a href="' . esc_url( LorePort_Client::base_url() . '/settings/api' ) . '" target="_blank" rel="noopener">' . esc_html__( 'Settings → API and webhooks', 'loreport' ) . '</a>'
 								);
 								?>
