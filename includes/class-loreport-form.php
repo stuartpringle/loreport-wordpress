@@ -101,7 +101,7 @@ class LorePort_Form {
 		++self::$count;
 		$form_id = 'loreport-signup-' . self::$count;
 		$list    = LorePort_Client::find_list( $list_id );
-		$consent = (string) ( $list['consent_text'] ?? '' );
+		$consent = LorePort_Signups::consent_text( $list );
 		$button  = '' !== trim( (string) ( $options['buttonText'] ?? '' ) ) ? (string) $options['buttonText'] : __( 'Subscribe', 'loreport' );
 		$title   = trim( (string) ( $options['title'] ?? '' ) );
 
@@ -156,13 +156,16 @@ class LorePort_Form {
 						<label for="<?php echo esc_attr( $form_id ); ?>-website"><?php esc_html_e( 'Leave this empty', 'loreport' ); ?></label>
 						<input type="text" id="<?php echo esc_attr( $form_id ); ?>-website" name="loreport_website" tabindex="-1" autocomplete="off">
 					</div>
+					<p class="loreport-signup__consent">
+						<label class="loreport-optin">
+							<input type="checkbox" name="loreport_consent" value="1" required>
+							<span><?php echo esc_html( $consent ); ?></span>
+						</label>
+					</p>
 					<p class="loreport-signup__submit">
 						<button type="submit" class="loreport-signup__button wp-element-button"><span class="loreport-signup__button-text"><?php echo esc_html( $button ); ?></span></button>
 					</p>
 				</div>
-				<?php if ( '' !== $consent ) : ?>
-					<p class="loreport-signup__consent"><?php echo esc_html( $consent ); ?></p>
-				<?php endif; ?>
 				<div class="loreport-signup__message<?php echo '' !== $status ? ( $good ? ' is-good' : ' is-bad' ) : ''; ?>" role="status" aria-live="polite">
 					<svg class="loreport-signup__check" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".15"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
 					<span class="loreport-signup__message-text"><?php echo '' !== $status ? esc_html( LorePort_Signups::message( $status ) ) : ''; ?></span>

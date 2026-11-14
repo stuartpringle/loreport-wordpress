@@ -172,11 +172,16 @@
 	to { transform: rotate(360deg); }
 }
 
+/* The consent checkbox gets a row of its own, above the button. */
 :where(.loreport-signup__consent) {
+	grid-column: 1 / -1;
 	margin: 0;
-	font-size: .85em;
+	font-size: .9em;
 	line-height: 1.45;
-	opacity: .7;
+}
+
+:where(.loreport-signup__consent span) {
+	opacity: .85;
 }
 
 /* Inline: email and button on one line. Labels stay for screen readers. */
@@ -194,6 +199,12 @@
 :where(.loreport-signup--inline .loreport-signup__submit) {
 	display: flex;
 	flex: 0 0 auto;
+}
+
+/* Inline: the checkbox goes under the email and button. */
+:where(.loreport-signup--inline .loreport-signup__consent) {
+	flex: 1 1 100%;
+	order: 3;
 }
 
 :where(.loreport-signup--inline .loreport-signup__field label) {
@@ -258,12 +269,13 @@
 }
 
 /* Once signed up, the fields step aside and the answer takes their place. */
-:where(.loreport-signup.is-done .loreport-signup__fields, .loreport-signup.is-done .loreport-signup__consent) {
+:where(.loreport-signup.is-done .loreport-signup__fields) {
 	display: none;
 }
 
-/* Opt-in checkboxes (comment form, Statamic forms). */
+/* Opt-in checkboxes (signup forms, comment form, Statamic forms). */
 :where(.comment-form-loreport label, .loreport-optin) {
+	cursor: pointer;
 	display: flex;
 	align-items: flex-start;
 	gap: .55em;
@@ -272,8 +284,9 @@
 
 :where(.comment-form-loreport input[type="checkbox"], .loreport-optin input[type="checkbox"]) {
 	flex: 0 0 auto;
-	width: 1.1em;
-	height: 1.1em;
+	width: 1.15em;
+	height: 1.15em;
+	cursor: pointer;
 	margin: .18em 0 0;
 	accent-color: var(--loreport-accent, currentColor);
 }

@@ -202,6 +202,8 @@ class LorePort_Signups {
 			$status = 'subscribed'; // A bot: pretend it worked, send nothing.
 		} elseif ( ! is_email( $email ) ) {
 			$status = 'invalid';
+		} elseif ( empty( $_POST['loreport_consent'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- public form; see token().
+			$status = 'consent';
 		} elseif ( self::too_many() ) {
 			$status = 'limited';
 		} else {
@@ -214,7 +216,7 @@ class LorePort_Signups {
 					'ip'           => self::reader_ip(),
 					'user_agent'   => self::reader_user_agent(),
 					'source'       => 'wordpress:form' . ( $page ? ':' . $page : '' ),
-					'consent_text' => $list['consent_text'] ?? null,
+					'consent_text' => self::consent_text( $list ),
 				)
 			);
 		}
@@ -225,7 +227,7 @@ class LorePort_Signups {
 					'status'  => $status,
 					'message' => self::message( $status ),
 				),
-				in_array( $status, array( 'invalid', 'refused', 'error', 'limited' ), true ) ? 400 : 200
+				in_array( $status, array( 'invalid', 'consent', 'refused', 'error', 'limited' ), true ) ? 400 : 200
 			);
 		}
 
@@ -233,6 +235,22 @@ class LorePort_Signups {
 		$back = $back ? $back : home_url( '/' );
 		wp_safe_redirect( add_query_arg( array( 'loreport_status' => $status, 'loreport_form' => $form_id ), remove_query_arg( array( 'loreport_status', 'loreport_form' ), $back ) ) . ( '' !== $form_id ? '#' . $form_id : '' ) );
 		exit;
+	}
+
+	/**
+	 * What the reader ticks to agree: the list's consent statement in LorePort,
+	 * or a plain one if the list has none.
+	 *
+	 * @param array|null $list The list, from LorePort_Client::find_list().
+	 */
+	public static function consent_text( ?array $list ): string {
+		$text = trim( (string) ( $list['consent_text'] ?? '' ) );
+
+		return '' !== $text ? $text : sprintf(
+			/* translators: %s: site name */
+			__( 'Yes, email me news and updates from %s. I can unsubscribe at any time.', 'loreport' ),
+			get_bloginfo( 'name' )
+		);
 	}
 
 	/** At most 5 signups per IP address in ten minutes. */
@@ -256,6 +274,7 @@ class LorePort_Signups {
 			'queued'     => __( 'Thank you! Your signup is on its way. If you need to confirm it, the email may take a little while.', 'loreport' ),
 			'refused'    => __( 'Sorry, that address can\'t be signed up. Please get in touch if you think that\'s a mistake.', 'loreport' ),
 			'invalid'    => __( 'Please enter a valid email address.', 'loreport' ),
+			'consent'    => __( 'Please tick the box to agree to the emails.', 'loreport' ),
 			'limited'    => __( 'Please wait a few minutes and try again.', 'loreport' ),
 			'error'      => __( 'Sorry, something went wrong. Please try again later.', 'loreport' ),
 		);
