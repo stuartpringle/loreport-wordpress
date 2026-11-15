@@ -4,7 +4,7 @@ Tags: newsletter, email, signup form, mailing list, authors
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 0.4.1
+Stable tag: 0.4.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -41,6 +41,10 @@ This plugin connects to the LorePort API (https://loreport.ca/api/v1), the servi
 
 == Frequently Asked Questions ==
 
+= How do I connect a different LorePort account? =
+
+Go to LorePort → Settings and use Disconnect. It revokes the key in LorePort (unless you untick that) and removes the key, your list choices and any signups still waiting to be sent. Then paste a key from the other account.
+
 = My site is behind a proxy or CDN and every signup has the same IP address =
 
 The plugin records `REMOTE_ADDR`. Behind a trusted proxy, set the real address with the `loreport_reader_ip` filter, for example from your CDN's client-IP header.
@@ -58,6 +62,10 @@ Yes, with the `loreport_signup_message` filter (it receives the message and a st
 Define `LOREPORT_API_URL` in wp-config.php, or use the `loreport_api_url` filter.
 
 == Changelog ==
+
+= 0.4.2 =
+* Disconnect (LorePort → Settings): to connect the site to a different LorePort account or pen name. It revokes the key in LorePort too, unless you untick that.
+* The Refresh button on LorePort's "signed out" notice always signs in again.
 
 = 0.4.1 =
 * When LorePort's session in the frame ends (after a long idle spell), the page signs in again by itself and reopens the same page.

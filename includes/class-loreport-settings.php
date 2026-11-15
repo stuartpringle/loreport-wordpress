@@ -20,6 +20,7 @@ class LorePort_Settings {
 	public static function init(): void {
 		add_action( 'admin_init', array( __CLASS__, 'register' ) );
 		add_action( 'admin_post_loreport_test_connection', array( __CLASS__, 'test_connection' ) );
+		add_action( 'admin_post_loreport_disconnect', array( __CLASS__, 'disconnect' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( LOREPORT_FILE ), array( __CLASS__, 'action_links' ) );
 	}
 
@@ -133,6 +134,57 @@ class LorePort_Settings {
 	}
 
 	/** Checks the key with GET /me and remembers the answer for the next page load. */
+	/**
+	 * Disconnects this site from LorePort, so it can be connected to another
+	 * account: revokes the key in LorePort (unless asked not to), and forgets
+	 * the key, every list choice and any signups still waiting to be sent
+	 * (they belong to the old account). Opt-in and popup switches are kept.
+	 */
+	public static function disconnect(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You can\'t change these settings.', 'loreport' ), 403 );
+		}
+		check_admin_referer( 'loreport_disconnect' );
+
+		$revoked = null;
+		if ( '' !== self::api_key() && ! empty( $_POST['revoke'] ) ) {
+			$revoked = 200 === LorePort_Client::request( 'DELETE', 'me' )['status'];
+		}
+
+		delete_option( 'loreport_api_key' );
+		delete_option( 'loreport_default_list' );
+		delete_option( LorePort_Signups::QUEUE_OPTION );
+		foreach ( array( 'comments', 'woocommerce', LorePort_Popup::OPTION ) as $option ) {
+			$name  = LorePort_Popup::OPTION === $option ? $option : 'loreport_' . $option;
+			$value = (array) get_option( $name, array() );
+			if ( $value ) {
+				$value['list'] = '';
+				update_option( $name, $value );
+			}
+		}
+		foreach ( array( 'loreport_lists', 'loreport_overview', 'loreport_recent' ) as $transient ) {
+			delete_transient( $transient );
+		}
+
+		$message = __( 'Disconnected from LorePort. Signup forms are hidden until you connect again.', 'loreport' );
+		if ( true === $revoked ) {
+			$message .= ' ' . __( 'The API key was revoked in LorePort.', 'loreport' );
+		} elseif ( false === $revoked ) {
+			$message .= ' ' . __( 'LorePort couldn\'t be reached to revoke the key: revoke it yourself in LorePort under Settings → API and webhooks.', 'loreport' );
+		}
+		set_transient(
+			'loreport_test_result_' . get_current_user_id(),
+			array(
+				'ok'      => true,
+				'message' => $message,
+			),
+			MINUTE_IN_SECONDS
+		);
+
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE ) );
+		exit;
+	}
+
 	public static function test_connection(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You can\'t change these settings.', 'loreport' ), 403 );
@@ -289,6 +341,15 @@ class LorePort_Settings {
 					<input type="hidden" name="action" value="loreport_test_connection">
 					<?php wp_nonce_field( 'loreport_test_connection' ); ?>
 					<?php submit_button( __( 'Test the connection', 'loreport' ), 'secondary', 'submit', false ); ?>
+				</form>
+
+				<h2><?php esc_html_e( 'Disconnect', 'loreport' ); ?></h2>
+				<p class="description" style="max-width:52em"><?php esc_html_e( 'To connect this site to a different LorePort account or pen name. The key and every list choice are removed from WordPress, and signups still waiting to reach LorePort are dropped (they belong to this account). Signup forms and the popup are hidden until you connect again; your opt-in and popup settings are kept.', 'loreport' ); ?></p>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('<?php echo esc_js( __( 'Disconnect this site from LorePort?', 'loreport' ) ); ?>')">
+					<input type="hidden" name="action" value="loreport_disconnect">
+					<?php wp_nonce_field( 'loreport_disconnect' ); ?>
+					<p><label><input type="checkbox" name="revoke" value="1" checked> <?php esc_html_e( 'Also revoke this key in LorePort, so it stops working everywhere', 'loreport' ); ?></label></p>
+					<?php submit_button( __( 'Disconnect from LorePort', 'loreport' ), 'delete', 'submit', false ); ?>
 				</form>
 			<?php endif; ?>
 

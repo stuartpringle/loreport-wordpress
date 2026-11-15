@@ -77,10 +77,11 @@
 			return;
 		}
 		// The frame's session ended (a long idle spell, or the key changed): sign in
-		// again at the same page. At most once a minute, so a browser that blocks
-		// the frame's cookie gets LorePort's "Open LorePort" page, not a loop.
+		// again at the same page. Automatically at most once a minute, so a browser
+		// that blocks the frame's cookie gets LorePort's "Open LorePort" page, not a
+		// loop; a click on the frame's Refresh button (manual) always goes through.
 		if ( data.type === 'expired' ) {
-			if ( Date.now() - signedInAt > 60000 ) {
+			if ( data.manual === true || Date.now() - signedInAt > 60000 ) {
 				var url = new URL( window.location.href );
 				var path = typeof data.path === 'string' && /^\/(subscribers|lists|newsletters)(\/|$|\?)/.test( data.path ) ? data.path : ( url.searchParams.get( 'path' ) || box.getAttribute( 'data-path' ) );
 				open( path );
