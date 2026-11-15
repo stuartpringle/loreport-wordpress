@@ -35,3 +35,4 @@
 .loreport-frame iframe { display: block; width: 100%; min-height: 480px; border: 1px solid #dcdcde; border-radius: 8px; background: #fff; }
 .loreport-frame__loading { display: flex; align-items: center; gap: .3em; color: #646970; }
 .loreport-frame__loading .spinner { float: none; margin: 0; }
+.loreport-frame [hidden] { display: none !important; }
