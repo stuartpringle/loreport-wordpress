@@ -51,7 +51,7 @@ class LorePort_Admin {
 			}
 			add_submenu_page( self::MENU, $title, $title, self::capability(), $slug, array( __CLASS__, 'render_embedded' ) );
 		}
-		add_submenu_page( self::MENU, __( 'LorePort on your website', 'loreport' ), __( 'Website', 'loreport' ), 'manage_options', LorePort_Settings::PAGE, array( 'LorePort_Settings', 'render' ) );
+		add_submenu_page( self::MENU, __( 'LorePort settings', 'loreport' ), __( 'Settings', 'loreport' ), 'manage_options', LorePort_Settings::PAGE, array( 'LorePort_Settings', 'render' ) );
 	}
 
 	public static function assets( string $hook ): void {
@@ -88,7 +88,7 @@ class LorePort_Admin {
 					printf(
 						/* translators: %s: link to the Website settings */
 						esc_html__( 'Connect LorePort first: add your API key under %s.', 'loreport' ),
-						'<a href="' . esc_url( admin_url( 'admin.php?page=' . LorePort_Settings::PAGE ) ) . '">' . esc_html__( 'LorePort → Website', 'loreport' ) . '</a>'
+						'<a href="' . esc_url( admin_url( 'admin.php?page=' . LorePort_Settings::PAGE ) ) . '">' . esc_html__( 'LorePort → Settings', 'loreport' ) . '</a>'
 					);
 					?>
 				</p></div>

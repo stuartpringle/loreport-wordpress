@@ -91,7 +91,7 @@ class LorePort_Form {
 		$list_id = '' !== $list_id ? $list_id : LorePort_Settings::default_list();
 		if ( '' === LorePort_Settings::api_key() || '' === $list_id ) {
 			return current_user_can( 'manage_options' )
-				? '<p class="loreport-signup__setup">' . esc_html__( 'LorePort signup form: add your API key and choose a list under LorePort → Website. (Only admins see this.)', 'loreport' ) . '</p>'
+				? '<p class="loreport-signup__setup">' . esc_html__( 'LorePort signup form: add your API key and choose a list under LorePort → Settings. (Only admins see this.)', 'loreport' ) . '</p>'
 				: '';
 		}
 

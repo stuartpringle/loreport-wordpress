@@ -4,7 +4,7 @@ Tags: newsletter, email, signup form, mailing list, authors
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 0.4.0
+Stable tag: 0.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -36,8 +36,8 @@ This plugin connects to the LorePort API (https://loreport.ca/api/v1), the servi
 
 1. Install and activate the plugin.
 2. In LorePort, go to Settings → API and webhooks and make a key with the "Read pen names, lists and tags" and "Send signups" permissions.
-3. In WordPress, go to LorePort → Website, paste the key, choose a default list, and save. Use "Test the connection" to check it.
-4. Add the "LorePort signup" block to a page, or use `[loreport_signup]`. For a popup, switch it on under LorePort → Website → Popup, and link any button or menu item to `#loreport-popup`.
+3. In WordPress, go to LorePort → Settings, paste the key, choose a default list, and save. Use "Test the connection" to check it.
+4. Add the "LorePort signup" block to a page, or use `[loreport_signup]`. For a popup, switch it on under LorePort → Settings → Popup, and link any button or menu item to `#loreport-popup`.
 
 == Frequently Asked Questions ==
 
@@ -59,9 +59,13 @@ Define `LOREPORT_API_URL` in wp-config.php, or use the `loreport_api_url` filter
 
 == Changelog ==
 
+= 0.4.1 =
+* When LorePort's session in the frame ends (after a long idle spell), the page signs in again by itself and reopens the same page.
+* The Website page is now called Settings.
+
 = 0.4.0 =
 * Subscribers, Lists and Newsletters are now LorePort's own pages, shown inside WordPress (LorePort menu): everything you do in LorePort's back end except pen names, plan, billing and sending setup, always up to date with LorePort. Needs the key's "Show Subscribers, Lists and Newsletters inside your website" permission and this site's address on the key.
-* Settings moved to LorePort → Website.
+* Settings moved to LorePort → Settings.
 
 = 0.3.1 =
 * Adding someone in the admin records that they agreed and how (with an optional confirmation email first), instead of treating them as a website signup.

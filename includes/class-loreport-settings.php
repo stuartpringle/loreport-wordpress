@@ -1,6 +1,6 @@
 <?php
 /**
- * The LorePort → Website page: connection, forms, popup and opt-in settings.
+ * The LorePort → Settings page: connection, forms, popup and opt-in settings.
  *
  * @package LorePort
  */
@@ -176,7 +176,7 @@ class LorePort_Settings {
 		$queued = count( LorePort_Signups::queue() );
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'LorePort on your website', 'loreport' ); ?></h1>
+			<h1><?php esc_html_e( 'LorePort settings', 'loreport' ); ?></h1>
 			<p class="description" style="max-width:52em"><?php esc_html_e( 'Connect your LorePort account, then add signup forms and a popup to your site. Your subscribers, lists and newsletters are under LorePort in the menu: they\'re LorePort\'s own pages, shown here.', 'loreport' ); ?></p>
 			<?php settings_errors(); ?>
 			<?php if ( is_array( $result ) ) : ?>

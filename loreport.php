@@ -3,7 +3,7 @@
  * Plugin Name:       LorePort
  * Plugin URI:        https://loreport.ca
  * Description:       Newsletter signup forms for LorePort authors: a signup block and shortcode, plus opt-in checkboxes on comments and WooCommerce checkout.
- * Version:           0.4.0
+ * Version:           0.4.1
  * Requires at least: 6.4
  * Requires PHP:      8.0
  * Author:            LorePort
@@ -14,7 +14,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'LOREPORT_VERSION', '0.4.0' );
+define( 'LOREPORT_VERSION', '0.4.1' );
 define( 'LOREPORT_FILE', __FILE__ );
 define( 'LOREPORT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'LOREPORT_URL', plugin_dir_url( __FILE__ ) );

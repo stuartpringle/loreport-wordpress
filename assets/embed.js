@@ -34,37 +34,60 @@
 		}
 	}
 
-	var body = new FormData();
-	body.append( 'action', 'loreport_embed_link' );
-	body.append( '_ajax_nonce', box.getAttribute( 'data-nonce' ) );
-	body.append( 'path', box.getAttribute( 'data-path' ) );
+	var signedInAt = 0;
 
-	fetch( box.getAttribute( 'data-ajax' ), { method: 'POST', body: body, credentials: 'same-origin' } )
-		.then( function ( response ) {
-			return response.json();
-		} )
-		.then( function ( result ) {
-			if ( ! result.success ) {
-				fail( ( result.data && result.data.message ) || 'LorePort couldn\'t be opened.', result.data && result.data.open );
-				return;
-			}
-			frame.addEventListener( 'load', function () {
-				loading.hidden = true;
+	// Asks WordPress for a fresh one-use sign-in link and opens it in the frame.
+	function open( path ) {
+		var body = new FormData();
+		body.append( 'action', 'loreport_embed_link' );
+		body.append( '_ajax_nonce', box.getAttribute( 'data-nonce' ) );
+		body.append( 'path', path );
+		signedInAt = Date.now();
+
+		fetch( box.getAttribute( 'data-ajax' ), { method: 'POST', body: body, credentials: 'same-origin' } )
+			.then( function ( response ) {
+				return response.json();
+			} )
+			.then( function ( result ) {
+				if ( ! result.success ) {
+					frame.hidden = true;
+					fail( ( result.data && result.data.message ) || 'LorePort couldn\'t be opened.', result.data && result.data.open );
+					return;
+				}
+				frame.hidden = false;
+				fit();
+				frame.src = result.data.url;
+			} )
+			.catch( function () {
+				fail( 'LorePort couldn\'t be reached. Please try again in a moment.' );
 			} );
-			frame.hidden = false;
-			fit();
-			frame.src = result.data.url;
-		} )
-		.catch( function () {
-			fail( 'LorePort couldn\'t be reached. Please try again in a moment.' );
-		} );
+	}
+
+	frame.addEventListener( 'load', function () {
+		loading.hidden = true;
+	} );
+	open( box.getAttribute( 'data-path' ) );
 
 	window.addEventListener( 'resize', fit );
 
 	// The frame tells us which LorePort page it's on.
 	window.addEventListener( 'message', function ( event ) {
 		var data = event.data;
-		if ( event.origin !== origin || event.source !== frame.contentWindow || ! data || data.source !== 'loreport' || data.type !== 'navigate' ) {
+		if ( event.origin !== origin || event.source !== frame.contentWindow || ! data || data.source !== 'loreport' ) {
+			return;
+		}
+		// The frame's session ended (a long idle spell, or the key changed): sign in
+		// again at the same page. At most once a minute, so a browser that blocks
+		// the frame's cookie gets LorePort's "Open LorePort" page, not a loop.
+		if ( data.type === 'expired' ) {
+			if ( Date.now() - signedInAt > 60000 ) {
+				var url = new URL( window.location.href );
+				var path = typeof data.path === 'string' && /^\/(subscribers|lists|newsletters)(\/|$|\?)/.test( data.path ) ? data.path : ( url.searchParams.get( 'path' ) || box.getAttribute( 'data-path' ) );
+				open( path );
+			}
+			return;
+		}
+		if ( data.type !== 'navigate' ) {
 			return;
 		}
 		if ( typeof data.path !== 'string' || ! /^\/(subscribers|lists|newsletters)(\/|$|\?)/.test( data.path ) ) {

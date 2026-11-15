@@ -7,7 +7,7 @@ The WordPress plugin for [LorePort](https://loreport.ca), the newsletter service
 ## Layout
 
 - `loreport.php`: plugin header and bootstrap.
-- `includes/`: one class per job. `LorePort_Client` (API calls), `LorePort_Settings` (LorePort → Website), `LorePort_Admin` (the LorePort menu: embedded Subscribers, Lists and Newsletters; dashboard widget), `LorePort_Popup`, `LorePort_Signups` (sending signups, form handling, spam checks, retry queue), `LorePort_Form` (shortcode and block rendering), `LorePort_Comments`, `LorePort_WooCommerce`, `LorePort_Privacy`.
+- `includes/`: one class per job. `LorePort_Client` (API calls), `LorePort_Settings` (LorePort → Settings), `LorePort_Admin` (the LorePort menu: embedded Subscribers, Lists and Newsletters; dashboard widget), `LorePort_Popup`, `LorePort_Signups` (sending signups, form handling, spam checks, retry queue), `LorePort_Form` (shortcode and block rendering), `LorePort_Comments`, `LorePort_WooCommerce`, `LorePort_Privacy`.
 - `blocks/signup/`: the block. Plain JavaScript using the editor's own scripts, so there's no build step; `index.asset.php` lists its dependencies by hand.
 - `assets/`: the form's CSS and the small script that sends forms in the background.
 - `uninstall.php`: removes the plugin's options when it's deleted.
