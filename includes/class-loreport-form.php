@@ -18,8 +18,10 @@ class LorePort_Form {
 
 	public static function init(): void {
 		add_shortcode( 'loreport_signup', array( __CLASS__, 'shortcode' ) );
-		add_action( 'init', array( __CLASS__, 'register_block' ) );
+		// Assets first: the block names the form stylesheet (block.json "style"),
+		// which is how it reaches the block editor's frame as well as the page.
 		add_action( 'init', array( __CLASS__, 'register_assets' ) );
+		add_action( 'init', array( __CLASS__, 'register_block' ) );
 	}
 
 	public static function register_assets(): void {

@@ -61,10 +61,20 @@ Yes, with the `loreport_signup_message` filter (it receives the message and a st
 
 Define `LOREPORT_API_URL` in wp-config.php, or use the `loreport_api_url` filter.
 
+== Screenshots ==
+
+1. A signup form block in a book page (card style), with an inline form below it. Forms take your theme's fonts and colours.
+2. The popup, opened by any button or link to #loreport-popup, or on its own after a delay.
+3. The newsletter checkbox on the comment form (never ticked in advance). WooCommerce checkout gets the same.
+4. The "LorePort signup" block in the editor: choose the list, heading, look, layout and button text.
+5. LorePort → Settings, Information tab: adding forms, and your lists with their IDs.
+6. The Popup and comment form tab.
+
 == Changelog ==
 
 = 0.4.3 =
 * The settings page is in tabs: Information (adding forms, your list IDs), Popup and comment form, WooCommerce, and Connection (the API key, testing the connection and disconnecting). Each tab saves only its own settings.
+* The signup block's preview in the editor now looks like the form on the page (the form's stylesheet wasn't loaded in the editor).
 
 = 0.4.2 =
 * Disconnect (LorePort → Settings): to connect the site to a different LorePort account or pen name. It revokes the key in LorePort too, unless you untick that.
