@@ -313,7 +313,7 @@ class LorePort_Signups {
 				sprintf(
 					/* translators: %s: link to the settings page */
 					__( 'LorePort is almost ready: <a href="%s">add your API key</a>.', 'loreport' ),
-					esc_url( admin_url( 'admin.php?page=' . LorePort_Settings::PAGE ) )
+					esc_url( LorePort_Settings::url( 'connection' ) )
 				)
 			) . '</p></div>';
 		}

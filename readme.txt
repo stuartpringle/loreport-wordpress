@@ -4,7 +4,7 @@ Tags: newsletter, email, signup form, mailing list, authors
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 0.4.2
+Stable tag: 0.4.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,9 @@ Yes, with the `loreport_signup_message` filter (it receives the message and a st
 Define `LOREPORT_API_URL` in wp-config.php, or use the `loreport_api_url` filter.
 
 == Changelog ==
+
+= 0.4.3 =
+* The settings page is in tabs: Information (adding forms, your list IDs), Popup and comment form, WooCommerce, and Connection (the API key, testing the connection and disconnecting). Each tab saves only its own settings.
 
 = 0.4.2 =
 * Disconnect (LorePort → Settings): to connect the site to a different LorePort account or pen name. It revokes the key in LorePort too, unless you untick that.

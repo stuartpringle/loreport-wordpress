@@ -1,7 +1,7 @@
 <?php
 /**
  * LorePort in the WordPress admin: LorePort's own Subscribers, Lists and
- * Newsletters pages in a frame (embedded mode), the Website settings, and a
+ * Newsletters pages in a frame (embedded mode), the Settings page, and a
  * dashboard widget.
  *
  * @package LorePort
@@ -86,9 +86,9 @@ class LorePort_Admin {
 				<div class="notice notice-warning inline"><p>
 					<?php
 					printf(
-						/* translators: %s: link to the Website settings */
+						/* translators: %s: link to the Connection settings */
 						esc_html__( 'Connect LorePort first: add your API key under %s.', 'loreport' ),
-						'<a href="' . esc_url( admin_url( 'admin.php?page=' . LorePort_Settings::PAGE ) ) . '">' . esc_html__( 'LorePort → Settings', 'loreport' ) . '</a>'
+						'<a href="' . esc_url( LorePort_Settings::url( 'connection' ) ) . '">' . esc_html__( 'LorePort → Settings → Connection', 'loreport' ) . '</a>'
 					);
 					?>
 				</p></div>

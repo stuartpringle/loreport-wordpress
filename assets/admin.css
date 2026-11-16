@@ -36,3 +36,15 @@
 .loreport-frame__loading { display: flex; align-items: center; gap: .3em; color: #646970; }
 .loreport-frame__loading .spinner { float: none; margin: 0; }
 .loreport-frame [hidden] { display: none !important; }
+/* Settings page tabs. */
+.loreport-settings .nav-tab-wrapper { margin-bottom: 0; }
+.loreport-tab { max-width: 980px; }
+.loreport-tab h2 { margin-top: 2em; }
+.loreport-tab > :first-child, .loreport-tab > form:first-child > h2:first-of-type, .loreport-tab > .notice:first-child + * { margin-top: 1.2em; }
+.loreport-tab .loreport-lead { max-width: 52em; }
+.loreport-tab .notice.inline { margin: 1.2em 0 0; }
+.loreport-tab code { word-break: break-word; }
+.loreport-options, .loreport-lists { max-width: 760px; }
+.loreport-options td:first-child { width: 12em; white-space: nowrap; }
+.loreport-settings .button.delete { color: #b32d2e; border-color: #b32d2e; }
+.loreport-settings .button.delete:hover, .loreport-settings .button.delete:focus { color: #fff; background: #b32d2e; border-color: #b32d2e; }

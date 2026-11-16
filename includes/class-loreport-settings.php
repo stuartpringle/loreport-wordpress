@@ -1,6 +1,7 @@
 <?php
 /**
- * The LorePort → Settings page: connection, forms, popup and opt-in settings.
+ * The LorePort → Settings page, in tabs: Information (adding forms, list IDs),
+ * Popup and comment form, WooCommerce, and Connection (key, test, disconnect).
  *
  * @package LorePort
  */
@@ -13,6 +14,16 @@ defined( 'ABSPATH' ) || exit;
 class LorePort_Settings {
 
 	const PAGE = 'loreport';
+
+	/**
+	 * Settings group per tab. options.php saves every option in the submitted
+	 * group, blanking any that aren't on the form, so each tab saves only its own.
+	 */
+	const GROUPS = array(
+		'connection'  => 'loreport_connection',
+		'popup'       => 'loreport_popup_comments',
+		'woocommerce' => 'loreport_woocommerce',
+	);
 
 	/** Permissions the plugin needs on its API key. */
 	const NEEDED = array( 'lists:read', 'signups:write' );
@@ -63,9 +74,38 @@ class LorePort_Settings {
 		return $links;
 	}
 
+	/**
+	 * The tabs, in order: key => label.
+	 *
+	 * @return array<string, string>
+	 */
+	public static function tabs(): array {
+		return array(
+			'information' => __( 'Information', 'loreport' ),
+			'popup'       => __( 'Popup and comment form', 'loreport' ),
+			'woocommerce' => __( 'WooCommerce', 'loreport' ),
+			'connection'  => __( 'Connection', 'loreport' ),
+		);
+	}
+
+	/**
+	 * The settings page's address, on a tab.
+	 *
+	 * @param string $tab A key from tabs().
+	 */
+	public static function url( string $tab = 'information' ): string {
+		return admin_url( 'admin.php?page=' . self::PAGE . ( 'information' === $tab ? '' : '&tab=' . $tab ) );
+	}
+
+	private static function current_tab(): string {
+		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only picks a tab.
+
+		return array_key_exists( $tab, self::tabs() ) ? $tab : 'information';
+	}
+
 	public static function register(): void {
 		register_setting(
-			self::PAGE,
+			self::GROUPS['connection'],
 			'loreport_api_key',
 			array(
 				'type'              => 'string',
@@ -74,7 +114,7 @@ class LorePort_Settings {
 			)
 		);
 		register_setting(
-			self::PAGE,
+			self::GROUPS['connection'],
 			'loreport_default_list',
 			array(
 				'type'              => 'string',
@@ -82,16 +122,16 @@ class LorePort_Settings {
 			)
 		);
 		register_setting(
-			self::PAGE,
+			self::GROUPS['popup'],
 			LorePort_Popup::OPTION,
 			array(
 				'type'              => 'array',
 				'sanitize_callback' => array( 'LorePort_Popup', 'sanitize' ),
 			)
 		);
-		foreach ( array( 'comments', 'woocommerce' ) as $where ) {
+		foreach ( array( 'comments' => self::GROUPS['popup'], 'woocommerce' => self::GROUPS['woocommerce'] ) as $where => $group ) {
 			register_setting(
-				self::PAGE,
+				$group,
 				'loreport_' . $where,
 				array(
 					'type'              => 'array',
@@ -133,7 +173,6 @@ class LorePort_Settings {
 		);
 	}
 
-	/** Checks the key with GET /me and remembers the answer for the next page load. */
 	/**
 	 * Disconnects this site from LorePort, so it can be connected to another
 	 * account: revokes the key in LorePort (unless asked not to), and forgets
@@ -181,10 +220,11 @@ class LorePort_Settings {
 			MINUTE_IN_SECONDS
 		);
 
-		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE ) );
+		wp_safe_redirect( self::url( 'connection' ) );
 		exit;
 	}
 
+	/** Checks the key with GET /me and remembers the answer for the next page load. */
 	public static function test_connection(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You can\'t change these settings.', 'loreport' ), 403 );
@@ -213,7 +253,7 @@ class LorePort_Settings {
 		}
 		set_transient( 'loreport_test_result_' . get_current_user_id(), $result, MINUTE_IN_SECONDS );
 
-		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE ) );
+		wp_safe_redirect( self::url( 'connection' ) );
 		exit;
 	}
 
@@ -221,15 +261,15 @@ class LorePort_Settings {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
+		$tab    = self::current_tab();
 		$key    = self::api_key();
-		$lists  = '' !== $key ? LorePort_Client::lists( true ) : array();
+		$lists  = '' !== $key && 'woocommerce' !== $tab ? LorePort_Client::lists( true ) : array();
 		$result = get_transient( 'loreport_test_result_' . get_current_user_id() );
 		delete_transient( 'loreport_test_result_' . get_current_user_id() );
 		$queued = count( LorePort_Signups::queue() );
 		?>
-		<div class="wrap">
+		<div class="wrap loreport-settings">
 			<h1><?php esc_html_e( 'LorePort settings', 'loreport' ); ?></h1>
-			<p class="description" style="max-width:52em"><?php esc_html_e( 'Connect your LorePort account, then add signup forms and a popup to your site. Your subscribers, lists and newsletters are under LorePort in the menu: they\'re LorePort\'s own pages, shown here.', 'loreport' ); ?></p>
 			<?php settings_errors(); ?>
 			<?php if ( is_array( $result ) ) : ?>
 				<div class="notice <?php echo $result['ok'] ? 'notice-success' : 'notice-error'; ?>"><p><?php echo esc_html( $result['message'] ); ?></p></div>
@@ -243,138 +283,276 @@ class LorePort_Settings {
 				</p></div>
 			<?php endif; ?>
 
-			<form method="post" action="options.php">
-				<?php settings_fields( self::PAGE ); ?>
-				<h2><?php esc_html_e( 'Connection', 'loreport' ); ?></h2>
-				<table class="form-table" role="presentation">
-					<tr>
-						<th scope="row"><label for="loreport_api_key"><?php esc_html_e( 'API key', 'loreport' ); ?></label></th>
-						<td>
-							<input type="password" id="loreport_api_key" name="loreport_api_key" class="regular-text code" autocomplete="off"
-								placeholder="<?php echo esc_attr( '' !== $key ? substr( $key, 0, 10 ) . '…' . __( ' (saved; type a new one to replace it)', 'loreport' ) : 'lp_…' ); ?>">
-							<p class="description">
-								<?php
-								printf(
-									/* translators: %s: link to LorePort's API settings */
-									esc_html__( 'Make one in LorePort under %s with the "Read pen names, lists and tags" and "Send signups" permissions. To manage subscribers, lists and newsletters from here too, also tick "Show Subscribers, Lists and Newsletters inside your website" and enter this site\'s address.', 'loreport' ),
-									'<a href="' . esc_url( LorePort_Client::base_url() . '/settings/api' ) . '" target="_blank" rel="noopener">' . esc_html__( 'Settings → API and webhooks', 'loreport' ) . '</a>'
-								);
-								?>
-							</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="loreport_default_list"><?php esc_html_e( 'Default list', 'loreport' ); ?></label></th>
-						<td>
-							<?php self::list_select( 'loreport_default_list', 'loreport_default_list', self::default_list(), $lists ); ?>
-							<p class="description"><?php esc_html_e( 'Signup forms use this list unless you choose another in the block or shortcode.', 'loreport' ); ?></p>
-						</td>
-					</tr>
-				</table>
-
-				<?php foreach ( array( 'comments' => __( 'Comment form', 'loreport' ), 'woocommerce' => __( 'WooCommerce checkout', 'loreport' ) ) as $where => $title ) : ?>
-					<?php
-					if ( 'woocommerce' === $where && ! class_exists( 'WooCommerce' ) ) {
-						continue;
-					}
-					$box = self::checkbox( $where );
-					?>
-					<h2><?php echo esc_html( $title ); ?></h2>
-					<table class="form-table" role="presentation">
-						<tr>
-							<th scope="row"><?php esc_html_e( 'Opt-in checkbox', 'loreport' ); ?></th>
-							<td>
-								<label><input type="checkbox" name="loreport_<?php echo esc_attr( $where ); ?>[enabled]" value="1" <?php checked( $box['enabled'] ); ?>>
-									<?php echo 'comments' === $where ? esc_html__( 'Offer a newsletter checkbox on the comment form', 'loreport' ) : esc_html__( 'Offer a newsletter checkbox at checkout', 'loreport' ); ?></label>
-								<p class="description"><?php esc_html_e( 'It\'s never ticked in advance: anti-spam laws require people to choose it themselves.', 'loreport' ); ?></p>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row"><label for="loreport_<?php echo esc_attr( $where ); ?>_list"><?php esc_html_e( 'List', 'loreport' ); ?></label></th>
-							<td><?php self::list_select( 'loreport_' . $where . '[list]', 'loreport_' . $where . '_list', $box['list'], $lists, true ); ?></td>
-						</tr>
-						<tr>
-							<th scope="row"><label for="loreport_<?php echo esc_attr( $where ); ?>_label"><?php esc_html_e( 'Checkbox wording', 'loreport' ); ?></label></th>
-							<td><input type="text" id="loreport_<?php echo esc_attr( $where ); ?>_label" name="loreport_<?php echo esc_attr( $where ); ?>[label]" class="large-text" value="<?php echo esc_attr( $box['label'] ); ?>"></td>
-						</tr>
-					</table>
+			<nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e( 'LorePort settings', 'loreport' ); ?>">
+				<?php foreach ( self::tabs() as $slug => $label ) : ?>
+					<a href="<?php echo esc_url( self::url( $slug ) ); ?>" class="nav-tab<?php echo $slug === $tab ? ' nav-tab-active' : ''; ?>"<?php echo $slug === $tab ? ' aria-current="page"' : ''; ?>><?php echo esc_html( $label ); ?></a>
 				<?php endforeach; ?>
+			</nav>
 
-				<?php $popup = LorePort_Popup::settings(); ?>
-				<h2><?php esc_html_e( 'Popup', 'loreport' ); ?></h2>
-				<p><?php esc_html_e( 'A signup form that opens over the page. Any button or menu link that points to #loreport-popup opens it (in a Button block, set the link to #loreport-popup), and so does the [loreport_popup_button] shortcode.', 'loreport' ); ?></p>
-				<table class="form-table" role="presentation">
-					<tr>
-						<th scope="row"><?php esc_html_e( 'On every page', 'loreport' ); ?></th>
-						<td><label><input type="checkbox" name="loreport_popup[enabled]" value="1" <?php checked( $popup['enabled'] ); ?>> <?php esc_html_e( 'Add the popup to every page of the site', 'loreport' ); ?></label></td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="loreport_popup_list"><?php esc_html_e( 'List', 'loreport' ); ?></label></th>
-						<td><?php self::list_select( 'loreport_popup[list]', 'loreport_popup_list', $popup['list'], $lists, true ); ?></td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="loreport_popup_title"><?php esc_html_e( 'Heading', 'loreport' ); ?></label></th>
-						<td><input type="text" id="loreport_popup_title" name="loreport_popup[title]" class="regular-text" value="<?php echo esc_attr( $popup['title'] ); ?>" placeholder="<?php esc_attr_e( 'Join the newsletter', 'loreport' ); ?>"></td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="loreport_popup_description"><?php esc_html_e( 'Description', 'loreport' ); ?></label></th>
-						<td><input type="text" id="loreport_popup_description" name="loreport_popup[description]" class="large-text" value="<?php echo esc_attr( $popup['description'] ); ?>" placeholder="<?php esc_attr_e( 'New books first, early chapters and the occasional giveaway.', 'loreport' ); ?>"></td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="loreport_popup_button"><?php esc_html_e( 'Button text', 'loreport' ); ?></label></th>
-						<td><input type="text" id="loreport_popup_button" name="loreport_popup[button]" class="regular-text" value="<?php echo esc_attr( $popup['button'] ); ?>" placeholder="<?php esc_attr_e( 'Subscribe', 'loreport' ); ?>"></td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="loreport_popup_delay"><?php esc_html_e( 'Open on its own', 'loreport' ); ?></label></th>
-						<td>
-							<input type="number" id="loreport_popup_delay" name="loreport_popup[delay]" class="small-text" min="0" max="600" value="<?php echo esc_attr( (string) $popup['delay'] ); ?>"> <?php esc_html_e( 'seconds after the page loads (0: only when someone clicks a button)', 'loreport' ); ?>
-							<p class="description"><?php esc_html_e( 'Once someone closes it or signs up, it won\'t open on its own for them again for 30 days.', 'loreport' ); ?></p>
-						</td>
-					</tr>
-				</table>
-
-				<?php submit_button(); ?>
-			</form>
-
-			<?php if ( '' !== $key ) : ?>
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-					<input type="hidden" name="action" value="loreport_test_connection">
-					<?php wp_nonce_field( 'loreport_test_connection' ); ?>
-					<?php submit_button( __( 'Test the connection', 'loreport' ), 'secondary', 'submit', false ); ?>
-				</form>
-
-				<h2><?php esc_html_e( 'Disconnect', 'loreport' ); ?></h2>
-				<p class="description" style="max-width:52em"><?php esc_html_e( 'To connect this site to a different LorePort account or pen name. The key and every list choice are removed from WordPress, and signups still waiting to reach LorePort are dropped (they belong to this account). Signup forms and the popup are hidden until you connect again; your opt-in and popup settings are kept.', 'loreport' ); ?></p>
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('<?php echo esc_js( __( 'Disconnect this site from LorePort?', 'loreport' ) ); ?>')">
-					<input type="hidden" name="action" value="loreport_disconnect">
-					<?php wp_nonce_field( 'loreport_disconnect' ); ?>
-					<p><label><input type="checkbox" name="revoke" value="1" checked> <?php esc_html_e( 'Also revoke this key in LorePort, so it stops working everywhere', 'loreport' ); ?></label></p>
-					<?php submit_button( __( 'Disconnect from LorePort', 'loreport' ), 'delete', 'submit', false ); ?>
-				</form>
-			<?php endif; ?>
-
-			<h2><?php esc_html_e( 'Adding a signup form', 'loreport' ); ?></h2>
-			<p><?php esc_html_e( 'Add the "LorePort signup" block in the editor, or use the shortcode anywhere shortcodes work:', 'loreport' ); ?></p>
-			<p><code>[loreport_signup]</code> &nbsp; <code>[loreport_signup list="LIST_ID" title="Join the readers' list" description="New books, early chapters and giveaways." layout="inline" style="plain" name="no" button="Join"]</code></p>
-			<p class="description"><?php esc_html_e( 'layout: stacked or inline (email and button on one line). style: card (a soft panel) or plain.', 'loreport' ); ?></p>
-			<p><?php esc_html_e( 'A popup on one page only, and a button to open it:', 'loreport' ); ?> <code>[loreport_popup title="Join the newsletter" delay="20"]</code> &nbsp; <code>[loreport_popup_button text="Get the newsletter"]</code></p>
-			<?php if ( $lists ) : ?>
-				<table class="widefat striped" style="max-width:720px">
-					<thead><tr><th><?php esc_html_e( 'List', 'loreport' ); ?></th><th><?php esc_html_e( 'List ID', 'loreport' ); ?></th><th><?php esc_html_e( 'Confirms by email', 'loreport' ); ?></th></tr></thead>
-					<tbody>
-					<?php foreach ( $lists as $list ) : ?>
-						<tr>
-							<td><?php echo esc_html( (string) ( $list['name'] ?? '' ) ); ?></td>
-							<td><code><?php echo esc_html( (string) ( $list['id'] ?? '' ) ); ?></code></td>
-							<td><?php echo ! empty( $list['double_opt_in'] ) ? esc_html__( 'Yes', 'loreport' ) : esc_html__( 'No', 'loreport' ); ?></td>
-						</tr>
-					<?php endforeach; ?>
-					</tbody>
-				</table>
-			<?php elseif ( '' !== $key ) : ?>
-				<p><?php esc_html_e( 'Your lists couldn\'t be loaded. Test the connection to see why.', 'loreport' ); ?></p>
-			<?php endif; ?>
+			<div class="loreport-tab">
+				<?php
+				if ( '' === $key && 'connection' !== $tab ) {
+					echo '<div class="notice notice-info inline"><p>' . wp_kses_post(
+						sprintf(
+							/* translators: %s: link to the Connection tab */
+							__( 'LorePort isn\'t connected yet: add your API key on the <a href="%s">Connection</a> tab. Forms and the popup stay hidden until then.', 'loreport' ),
+							esc_url( self::url( 'connection' ) )
+						)
+					) . '</p></div>';
+				}
+				switch ( $tab ) {
+					case 'popup':
+						self::render_popup_tab( $lists );
+						break;
+					case 'woocommerce':
+						self::render_woocommerce_tab();
+						break;
+					case 'connection':
+						self::render_connection_tab( $key, $lists );
+						break;
+					default:
+						self::render_information_tab( $key, $lists );
+				}
+				?>
+			</div>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Information: what the plugin does, adding forms, and the list IDs.
+	 *
+	 * @param string $key   The saved API key.
+	 * @param array  $lists Lists from LorePort.
+	 */
+	private static function render_information_tab( string $key, array $lists ): void {
+		?>
+		<p class="loreport-lead"><?php esc_html_e( 'Readers join your LorePort lists from signup forms on your site, a popup, and newsletter checkboxes on the comment form and WooCommerce checkout. Your subscribers, lists and newsletters are under LorePort in the menu: they\'re LorePort\'s own pages, shown here.', 'loreport' ); ?></p>
+
+		<h2><?php esc_html_e( 'Adding a signup form', 'loreport' ); ?></h2>
+		<p><?php esc_html_e( 'Add the "LorePort signup" block in the editor, or use the shortcode anywhere shortcodes work:', 'loreport' ); ?></p>
+		<p><code>[loreport_signup]</code></p>
+		<p><code>[loreport_signup list="LIST_ID" title="Join the readers' list" description="New books, early chapters and giveaways." layout="inline" style="plain" name="no" button="Join"]</code></p>
+		<table class="widefat striped loreport-options">
+			<thead><tr><th><?php esc_html_e( 'Option', 'loreport' ); ?></th><th><?php esc_html_e( 'What it does', 'loreport' ); ?></th></tr></thead>
+			<tbody>
+				<tr><td><code>list</code></td><td><?php esc_html_e( 'The list ID (below). Leave it out to use the default list.', 'loreport' ); ?></td></tr>
+				<tr><td><code>title</code>, <code>description</code></td><td><?php esc_html_e( 'A heading and a line of text above the form.', 'loreport' ); ?></td></tr>
+				<tr><td><code>layout</code></td><td><?php esc_html_e( 'stacked, or inline (email and button on one line).', 'loreport' ); ?></td></tr>
+				<tr><td><code>style</code></td><td><?php esc_html_e( 'card (a soft panel) or plain.', 'loreport' ); ?></td></tr>
+				<tr><td><code>name</code></td><td><?php esc_html_e( 'yes or no: ask for the reader\'s name.', 'loreport' ); ?></td></tr>
+				<tr><td><code>button</code></td><td><?php esc_html_e( 'The button\'s text.', 'loreport' ); ?></td></tr>
+			</tbody>
+		</table>
+		<p>
+			<?php
+			printf(
+				/* translators: %s: link to the Popup and comment form tab */
+				wp_kses_post( __( 'For a popup, and a newsletter checkbox on the comment form, see <a href="%s">Popup and comment form</a>.', 'loreport' ) ),
+				esc_url( self::url( 'popup' ) )
+			);
+			?>
+		</p>
+
+		<h2><?php esc_html_e( 'Your lists', 'loreport' ); ?></h2>
+		<?php if ( $lists ) : ?>
+			<table class="widefat striped loreport-lists">
+				<thead><tr><th><?php esc_html_e( 'List', 'loreport' ); ?></th><th><?php esc_html_e( 'List ID', 'loreport' ); ?></th><th><?php esc_html_e( 'Confirms by email', 'loreport' ); ?></th></tr></thead>
+				<tbody>
+				<?php foreach ( $lists as $list ) : ?>
+					<tr>
+						<td><?php echo esc_html( (string) ( $list['name'] ?? '' ) ); ?><?php echo ( $list['id'] ?? '' ) === self::default_list() ? ' <span class="loreport-badge">' . esc_html__( 'Default', 'loreport' ) . '</span>' : ''; ?></td>
+						<td><code><?php echo esc_html( (string) ( $list['id'] ?? '' ) ); ?></code></td>
+						<td><?php echo ! empty( $list['double_opt_in'] ) ? esc_html__( 'Yes', 'loreport' ) : esc_html__( 'No', 'loreport' ); ?></td>
+					</tr>
+				<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php elseif ( '' !== $key ) : ?>
+			<p>
+				<?php
+				printf(
+					/* translators: %s: link to the Connection tab */
+					wp_kses_post( __( 'Your lists couldn\'t be loaded. <a href="%s">Test the connection</a> to see why.', 'loreport' ) ),
+					esc_url( self::url( 'connection' ) )
+				);
+				?>
+			</p>
+		<?php else : ?>
+			<p class="description"><?php esc_html_e( 'Your lists show here once LorePort is connected.', 'loreport' ); ?></p>
+		<?php endif; ?>
+		<?php
+	}
+
+	/**
+	 * Popup and comment form.
+	 *
+	 * @param array $lists Lists from LorePort.
+	 */
+	private static function render_popup_tab( array $lists ): void {
+		$popup = LorePort_Popup::settings();
+		?>
+		<form method="post" action="options.php">
+			<?php settings_fields( self::GROUPS['popup'] ); ?>
+			<h2><?php esc_html_e( 'Popup', 'loreport' ); ?></h2>
+			<p class="loreport-lead"><?php esc_html_e( 'A signup form that opens over the page. Any button or menu link that points to #loreport-popup opens it (in a Button block, set the link to #loreport-popup), and so does the [loreport_popup_button] shortcode.', 'loreport' ); ?></p>
+			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row"><?php esc_html_e( 'On every page', 'loreport' ); ?></th>
+					<td><label><input type="checkbox" name="loreport_popup[enabled]" value="1" <?php checked( $popup['enabled'] ); ?>> <?php esc_html_e( 'Add the popup to every page of the site', 'loreport' ); ?></label></td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="loreport_popup_list"><?php esc_html_e( 'List', 'loreport' ); ?></label></th>
+					<td><?php self::list_select( 'loreport_popup[list]', 'loreport_popup_list', $popup['list'], $lists, true ); ?></td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="loreport_popup_title"><?php esc_html_e( 'Heading', 'loreport' ); ?></label></th>
+					<td><input type="text" id="loreport_popup_title" name="loreport_popup[title]" class="regular-text" value="<?php echo esc_attr( $popup['title'] ); ?>" placeholder="<?php esc_attr_e( 'Join the newsletter', 'loreport' ); ?>"></td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="loreport_popup_description"><?php esc_html_e( 'Description', 'loreport' ); ?></label></th>
+					<td><input type="text" id="loreport_popup_description" name="loreport_popup[description]" class="large-text" value="<?php echo esc_attr( $popup['description'] ); ?>" placeholder="<?php esc_attr_e( 'New books first, early chapters and the occasional giveaway.', 'loreport' ); ?>"></td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="loreport_popup_button"><?php esc_html_e( 'Button text', 'loreport' ); ?></label></th>
+					<td><input type="text" id="loreport_popup_button" name="loreport_popup[button]" class="regular-text" value="<?php echo esc_attr( $popup['button'] ); ?>" placeholder="<?php esc_attr_e( 'Subscribe', 'loreport' ); ?>"></td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="loreport_popup_delay"><?php esc_html_e( 'Open on its own', 'loreport' ); ?></label></th>
+					<td>
+						<input type="number" id="loreport_popup_delay" name="loreport_popup[delay]" class="small-text" min="0" max="600" value="<?php echo esc_attr( (string) $popup['delay'] ); ?>"> <?php esc_html_e( 'seconds after the page loads (0: only when someone clicks a button)', 'loreport' ); ?>
+						<p class="description"><?php esc_html_e( 'Once someone closes it or signs up, it won\'t open on its own for them again for 30 days.', 'loreport' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'On some pages only', 'loreport' ); ?></th>
+					<td>
+						<p><?php esc_html_e( 'Leave "On every page" off and put the shortcode on the pages you want. It takes the same options as above:', 'loreport' ); ?></p>
+						<p><code>[loreport_popup title="Join the newsletter" delay="20"]</code></p>
+						<p><?php esc_html_e( 'A button that opens it:', 'loreport' ); ?> <code>[loreport_popup_button text="Get the newsletter"]</code></p>
+					</td>
+				</tr>
+			</table>
+
+			<?php self::render_checkbox_settings( 'comments', $lists ); ?>
+
+			<?php submit_button(); ?>
+		</form>
+		<?php
+	}
+
+	private static function render_woocommerce_tab(): void {
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			?>
+			<h2><?php esc_html_e( 'WooCommerce checkout', 'loreport' ); ?></h2>
+			<p class="loreport-lead"><?php esc_html_e( 'If you sell through WooCommerce, LorePort can add a newsletter checkbox to the checkout (classic and block checkout). WooCommerce isn\'t active on this site, so there\'s nothing to set up here.', 'loreport' ); ?></p>
+			<?php
+			return;
+		}
+		$lists = '' !== self::api_key() ? LorePort_Client::lists() : array();
+		?>
+		<form method="post" action="options.php">
+			<?php settings_fields( self::GROUPS['woocommerce'] ); ?>
+			<?php self::render_checkbox_settings( 'woocommerce', $lists ); ?>
+			<?php submit_button(); ?>
+		</form>
+		<?php
+	}
+
+	/**
+	 * The opt-in checkbox settings for the comment form or checkout.
+	 *
+	 * @param string $where "comments" or "woocommerce".
+	 * @param array  $lists Lists from LorePort.
+	 */
+	private static function render_checkbox_settings( string $where, array $lists ): void {
+		$box = self::checkbox( $where );
+		?>
+		<h2><?php echo 'comments' === $where ? esc_html__( 'Comment form', 'loreport' ) : esc_html__( 'WooCommerce checkout', 'loreport' ); ?></h2>
+		<p class="loreport-lead"><?php echo 'comments' === $where ? esc_html__( 'A newsletter checkbox under the comment form, so commenters can join a list as they comment.', 'loreport' ) : esc_html__( 'A newsletter checkbox at checkout (classic and block checkout), so customers can join a list as they buy.', 'loreport' ); ?></p>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Opt-in checkbox', 'loreport' ); ?></th>
+				<td>
+					<label><input type="checkbox" name="loreport_<?php echo esc_attr( $where ); ?>[enabled]" value="1" <?php checked( $box['enabled'] ); ?>>
+						<?php echo 'comments' === $where ? esc_html__( 'Offer a newsletter checkbox on the comment form', 'loreport' ) : esc_html__( 'Offer a newsletter checkbox at checkout', 'loreport' ); ?></label>
+					<p class="description"><?php esc_html_e( 'It\'s never ticked in advance: anti-spam laws require people to choose it themselves.', 'loreport' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="loreport_<?php echo esc_attr( $where ); ?>_list"><?php esc_html_e( 'List', 'loreport' ); ?></label></th>
+				<td><?php self::list_select( 'loreport_' . $where . '[list]', 'loreport_' . $where . '_list', $box['list'], $lists, true ); ?></td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="loreport_<?php echo esc_attr( $where ); ?>_label"><?php esc_html_e( 'Checkbox wording', 'loreport' ); ?></label></th>
+				<td><input type="text" id="loreport_<?php echo esc_attr( $where ); ?>_label" name="loreport_<?php echo esc_attr( $where ); ?>[label]" class="large-text" value="<?php echo esc_attr( $box['label'] ); ?>"></td>
+			</tr>
+		</table>
+		<?php
+	}
+
+	/**
+	 * Connection: the key, the default list, Test and Disconnect.
+	 *
+	 * @param string $key   The saved API key.
+	 * @param array  $lists Lists from LorePort.
+	 */
+	private static function render_connection_tab( string $key, array $lists ): void {
+		?>
+		<form method="post" action="options.php">
+			<?php settings_fields( self::GROUPS['connection'] ); ?>
+			<h2><?php esc_html_e( 'Connection', 'loreport' ); ?></h2>
+			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row"><label for="loreport_api_key"><?php esc_html_e( 'API key', 'loreport' ); ?></label></th>
+					<td>
+						<input type="password" id="loreport_api_key" name="loreport_api_key" class="regular-text code" autocomplete="off"
+							placeholder="<?php echo esc_attr( '' !== $key ? substr( $key, 0, 10 ) . '…' . __( ' (saved)', 'loreport' ) : 'lp_…' ); ?>">
+						<?php if ( '' !== $key ) : ?>
+							<p class="description"><?php esc_html_e( 'A key is saved. Leave this empty to keep it, or paste a new one to replace it.', 'loreport' ); ?></p>
+						<?php endif; ?>
+						<p class="description">
+							<?php
+							printf(
+								/* translators: %s: link to LorePort's API settings */
+								esc_html__( 'Make one in LorePort under %s with the "Read pen names, lists and tags" and "Send signups" permissions. To manage subscribers, lists and newsletters from here too, also tick "Show Subscribers, Lists and Newsletters inside your website" and enter this site\'s address.', 'loreport' ),
+								'<a href="' . esc_url( LorePort_Client::base_url() . '/settings/api' ) . '" target="_blank" rel="noopener">' . esc_html__( 'Settings → API and webhooks', 'loreport' ) . '</a>'
+							);
+							?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="loreport_default_list"><?php esc_html_e( 'Default list', 'loreport' ); ?></label></th>
+					<td>
+						<?php self::list_select( 'loreport_default_list', 'loreport_default_list', self::default_list(), $lists ); ?>
+						<p class="description"><?php esc_html_e( 'Signup forms, the popup and the opt-in checkboxes use this list unless you choose another.', 'loreport' ); ?></p>
+					</td>
+				</tr>
+			</table>
+			<?php submit_button(); ?>
+		</form>
+
+		<?php if ( '' === $key ) : ?>
+			<?php return; ?>
+		<?php endif; ?>
+
+		<h2><?php esc_html_e( 'Test the connection', 'loreport' ); ?></h2>
+		<p class="loreport-lead"><?php esc_html_e( 'Checks the key with LorePort and that it has the permissions the plugin needs.', 'loreport' ); ?></p>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<input type="hidden" name="action" value="loreport_test_connection">
+			<?php wp_nonce_field( 'loreport_test_connection' ); ?>
+			<?php submit_button( __( 'Test the connection', 'loreport' ), 'secondary', 'submit', false ); ?>
+		</form>
+
+		<h2><?php esc_html_e( 'Disconnect', 'loreport' ); ?></h2>
+		<p class="loreport-lead"><?php esc_html_e( 'To connect this site to a different LorePort account or pen name. The key and every list choice are removed from WordPress, and signups still waiting to reach LorePort are dropped (they belong to this account). Signup forms and the popup are hidden until you connect again; your opt-in and popup settings are kept.', 'loreport' ); ?></p>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('<?php echo esc_js( __( 'Disconnect this site from LorePort?', 'loreport' ) ); ?>')">
+			<input type="hidden" name="action" value="loreport_disconnect">
+			<?php wp_nonce_field( 'loreport_disconnect' ); ?>
+			<p><label><input type="checkbox" name="revoke" value="1" checked> <?php esc_html_e( 'Also revoke this key in LorePort, so it stops working everywhere', 'loreport' ); ?></label></p>
+			<?php submit_button( __( 'Disconnect from LorePort', 'loreport' ), 'delete', 'submit', false ); ?>
+		</form>
 		<?php
 	}
 
