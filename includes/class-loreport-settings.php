@@ -153,6 +153,7 @@ class LorePort_Settings {
 			return self::api_key();
 		}
 		delete_transient( 'loreport_lists' );
+		delete_transient( 'loreport_status' );
 
 		return $value;
 	}
@@ -201,7 +202,7 @@ class LorePort_Settings {
 				update_option( $name, $value );
 			}
 		}
-		foreach ( array( 'loreport_lists', 'loreport_overview', 'loreport_recent' ) as $transient ) {
+		foreach ( array( 'loreport_lists', 'loreport_overview', 'loreport_recent', 'loreport_status' ) as $transient ) {
 			delete_transient( $transient );
 		}
 
@@ -224,37 +225,131 @@ class LorePort_Settings {
 		exit;
 	}
 
-	/** Checks the key with GET /me and remembers the answer for the next page load. */
+	/**
+	 * Checks the key with LorePort (GET /me).
+	 *
+	 * @return array{state: string, message: string, account: string} state is
+	 *         "connected", "permissions" (works, but missing permissions),
+	 *         "rejected" (LorePort refused the key) or "unreachable".
+	 */
+	public static function check(): array {
+		$response = LorePort_Client::request( 'GET', 'me' );
+		if ( 200 === $response['status'] ) {
+			$account   = (string) ( $response['body']['data']['account']['name'] ?? '' );
+			$abilities = (array) ( $response['body']['data']['key']['abilities'] ?? array() );
+			$missing   = array_diff( self::NEEDED, $abilities );
+
+			return array(
+				'state'   => array() === $missing ? 'connected' : 'permissions',
+				'account' => $account,
+				'message' => array() === $missing
+					/* translators: %s: the LorePort account's name */
+					? sprintf( __( 'Connected to LorePort as %s.', 'loreport' ), $account )
+					/* translators: %s: comma-separated permission names */
+					: sprintf( __( 'Connected, but the key is missing these permissions: %s. Make a new key in LorePort with them.', 'loreport' ), implode( ', ', $missing ) ),
+			);
+		}
+
+		if ( in_array( $response['status'], array( 401, 403 ), true ) ) {
+			return array(
+				'state'   => 'rejected',
+				'account' => '',
+				'message' => __( 'LorePort didn\'t accept this key: it may have been revoked or deleted. Make a new one in LorePort and paste it below.', 'loreport' ),
+			);
+		}
+
+		return array(
+			'state'   => 'unreachable',
+			'account' => '',
+			/* translators: %s: the error from LorePort */
+			'message' => sprintf( __( 'Couldn\'t reach LorePort: %s. Signups made meanwhile wait on your site and are sent once it\'s back.', 'loreport' ), (string) $response['error'] ),
+		);
+	}
+
+	/**
+	 * The connection's state for the settings page: "none" with no key, else
+	 * check()'s answer, remembered for ten minutes (one minute when it failed,
+	 * so a short outage clears quickly).
+	 *
+	 * @return array{state: string, message: string, account: string}
+	 */
+	public static function status(): array {
+		if ( '' === self::api_key() ) {
+			return array(
+				'state'   => 'none',
+				'account' => '',
+				'message' => '',
+			);
+		}
+		$cached = get_transient( 'loreport_status' );
+		if ( is_array( $cached ) && isset( $cached['state'] ) ) {
+			return $cached;
+		}
+
+		return self::remember_status( self::check() );
+	}
+
+	private static function remember_status( array $status ): array {
+		set_transient( 'loreport_status', $status, 'connected' === $status['state'] ? 10 * MINUTE_IN_SECONDS : MINUTE_IN_SECONDS );
+
+		return $status;
+	}
+
+	/** Checks the key with GET /me and shows the answer on the next page load. */
 	public static function test_connection(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You can\'t change these settings.', 'loreport' ), 403 );
 		}
 		check_admin_referer( 'loreport_test_connection' );
 
-		$response = LorePort_Client::request( 'GET', 'me' );
-		if ( 200 === $response['status'] ) {
-			$abilities = (array) ( $response['body']['data']['key']['abilities'] ?? array() );
-			$missing   = array_diff( self::NEEDED, $abilities );
-			$result    = array(
-				'ok'      => array() === $missing,
-				'message' => array() === $missing
-					/* translators: %s: the LorePort account's name */
-					? sprintf( __( 'Connected to LorePort as %s.', 'loreport' ), (string) ( $response['body']['data']['account']['name'] ?? '' ) )
-					/* translators: %s: comma-separated permission names */
-					: sprintf( __( 'Connected, but the key is missing these permissions: %s. Make a new key in LorePort with them.', 'loreport' ), implode( ', ', $missing ) ),
-			);
+		$status = self::remember_status( self::check() );
+		if ( 'connected' === $status['state'] ) {
 			delete_transient( 'loreport_lists' );
-		} else {
-			$result = array(
-				'ok'      => false,
-				/* translators: %s: the error from LorePort */
-				'message' => sprintf( __( 'Couldn\'t connect: %s', 'loreport' ), (string) $response['error'] ),
-			);
 		}
-		set_transient( 'loreport_test_result_' . get_current_user_id(), $result, MINUTE_IN_SECONDS );
+		set_transient(
+			'loreport_test_result_' . get_current_user_id(),
+			array(
+				'ok'      => 'connected' === $status['state'],
+				'message' => $status['message'],
+			),
+			MINUTE_IN_SECONDS
+		);
 
 		wp_safe_redirect( self::url( 'connection' ) );
 		exit;
+	}
+
+	/**
+	 * A small coloured badge with the connection's state, beside the page title.
+	 *
+	 * @param array $status From status().
+	 */
+	private static function status_badge( array $status ): void {
+		$labels = array(
+			'connected'   => __( 'Connected', 'loreport' ),
+			'permissions' => __( 'Connected, missing permissions', 'loreport' ),
+			'rejected'    => __( 'Key not accepted', 'loreport' ),
+			'unreachable' => __( 'Can\'t reach LorePort', 'loreport' ),
+			'none'        => __( 'Not connected', 'loreport' ),
+		);
+		$tone   = array(
+			'connected'   => 'good',
+			'permissions' => 'warn',
+			'rejected'    => 'bad',
+			'unreachable' => 'warn',
+			'none'        => 'off',
+		);
+		$title  = 'connected' === $status['state'] && '' !== $status['account']
+			/* translators: %s: the LorePort account's name */
+			? sprintf( __( 'Connected to LorePort as %s', 'loreport' ), $status['account'] )
+			: $status['message'];
+		printf(
+			'<a class="loreport-status loreport-status--%1$s" href="%2$s" title="%3$s"><span class="loreport-status__dot" aria-hidden="true"></span>%4$s</a>',
+			esc_attr( $tone[ $status['state'] ] ?? 'off' ),
+			esc_url( self::url( 'connection' ) ),
+			esc_attr( $title ),
+			esc_html( $labels[ $status['state'] ] ?? $labels['none'] )
+		);
 	}
 
 	public static function render(): void {
@@ -269,7 +364,8 @@ class LorePort_Settings {
 		$queued = count( LorePort_Signups::queue() );
 		?>
 		<div class="wrap loreport-settings">
-			<h1><?php esc_html_e( 'LorePort settings', 'loreport' ); ?></h1>
+			<?php $status = self::status(); ?>
+			<h1 class="loreport-settings__title"><?php esc_html_e( 'LorePort settings', 'loreport' ); ?> <?php self::status_badge( $status ); ?></h1>
 			<?php settings_errors(); ?>
 			<?php if ( is_array( $result ) ) : ?>
 				<div class="notice <?php echo $result['ok'] ? 'notice-success' : 'notice-error'; ?>"><p><?php echo esc_html( $result['message'] ); ?></p></div>
@@ -308,7 +404,7 @@ class LorePort_Settings {
 						self::render_woocommerce_tab();
 						break;
 					case 'connection':
-						self::render_connection_tab( $key, $lists );
+						self::render_connection_tab( $key, $lists, $status );
 						break;
 					default:
 						self::render_information_tab( $key, $lists );
@@ -494,22 +590,50 @@ class LorePort_Settings {
 	/**
 	 * Connection: the key, the default list, Test and Disconnect.
 	 *
-	 * @param string $key   The saved API key.
-	 * @param array  $lists Lists from LorePort.
+	 * @param string $key    The saved API key.
+	 * @param array  $lists  Lists from LorePort.
+	 * @param array  $status From status().
 	 */
-	private static function render_connection_tab( string $key, array $lists ): void {
+	private static function render_connection_tab( string $key, array $lists, array $status ): void {
 		?>
 		<form method="post" action="options.php">
 			<?php settings_fields( self::GROUPS['connection'] ); ?>
 			<h2><?php esc_html_e( 'Connection', 'loreport' ); ?></h2>
 			<table class="form-table" role="presentation">
 				<tr>
-					<th scope="row"><label for="loreport_api_key"><?php esc_html_e( 'API key', 'loreport' ); ?></label></th>
-					<td>
-						<input type="password" id="loreport_api_key" name="loreport_api_key" class="regular-text code" autocomplete="off"
-							placeholder="<?php echo esc_attr( '' !== $key ? substr( $key, 0, 10 ) . '…' . __( ' (saved)', 'loreport' ) : 'lp_…' ); ?>">
+					<th scope="row">
 						<?php if ( '' !== $key ) : ?>
-							<p class="description"><?php esc_html_e( 'A key is saved. Leave this empty to keep it, or paste a new one to replace it.', 'loreport' ); ?></p>
+							<?php esc_html_e( 'API key', 'loreport' ); ?>
+						<?php else : ?>
+							<label for="loreport_api_key"><?php esc_html_e( 'API key', 'loreport' ); ?></label>
+						<?php endif; ?>
+					</th>
+					<td>
+						<?php if ( '' !== $key ) : ?>
+							<?php $good = in_array( $status['state'], array( 'connected', 'permissions' ), true ); ?>
+							<div class="loreport-key <?php echo $good ? 'is-good' : 'is-bad'; ?>">
+								<span class="dashicons <?php echo $good ? 'dashicons-yes-alt' : 'dashicons-warning'; ?>" aria-hidden="true"></span>
+								<code><?php echo esc_html( substr( $key, 0, 10 ) ); ?>••••••••••••</code>
+								<span class="loreport-key__note"><?php echo $good ? esc_html__( 'Saved. The full key is hidden for safety.', 'loreport' ) : esc_html__( 'Saved, but it isn\'t working right now (see below).', 'loreport' ); ?></span>
+							</div>
+							<?php if ( 'connected' === $status['state'] && '' !== $status['account'] ) : ?>
+								<p class="description">
+									<?php
+									/* translators: %s: the LorePort account's name */
+									echo esc_html( sprintf( __( 'Connected to LorePort as %s.', 'loreport' ), $status['account'] ) );
+									?>
+								</p>
+							<?php elseif ( 'connected' !== $status['state'] ) : ?>
+								<p class="description"><?php echo esc_html( $status['message'] ); ?></p>
+							<?php endif; ?>
+							<details class="loreport-key__replace"<?php echo 'rejected' === $status['state'] ? ' open' : ''; ?>>
+								<summary><?php esc_html_e( 'Replace the key', 'loreport' ); ?></summary>
+								<label for="loreport_api_key" class="screen-reader-text"><?php esc_html_e( 'New API key', 'loreport' ); ?></label>
+								<input type="password" id="loreport_api_key" name="loreport_api_key" class="regular-text code" autocomplete="off" placeholder="<?php esc_attr_e( 'Paste the new key (lp_…)', 'loreport' ); ?>">
+								<p class="description"><?php esc_html_e( 'Leave it empty to keep the saved key.', 'loreport' ); ?></p>
+							</details>
+						<?php else : ?>
+							<input type="password" id="loreport_api_key" name="loreport_api_key" class="regular-text code" autocomplete="off" placeholder="lp_…">
 						<?php endif; ?>
 						<p class="description">
 							<?php

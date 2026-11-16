@@ -48,3 +48,23 @@
 .loreport-options td:first-child { width: 12em; white-space: nowrap; }
 .loreport-settings .button.delete { color: #b32d2e; border-color: #b32d2e; }
 .loreport-settings .button.delete:hover, .loreport-settings .button.delete:focus { color: #fff; background: #b32d2e; border-color: #b32d2e; }
+/* Connection status beside the settings title, and the saved key. */
+.loreport-settings__title { display: flex; flex-wrap: wrap; align-items: center; gap: .6em; }
+.loreport-status { display: inline-flex; align-items: center; gap: .45em; padding: .2em .8em; border-radius: 999px; font-size: 13px; font-weight: 500; line-height: 1.6; text-decoration: none; border: 1px solid transparent; }
+.loreport-status:focus { box-shadow: 0 0 0 2px #2271b1; outline: 0; }
+.loreport-status__dot { width: .6em; height: .6em; border-radius: 50%; background: currentColor; }
+.loreport-status--good { background: #e7f6ec; color: #116329; border-color: #b8e6c4; }
+.loreport-status--good .loreport-status__dot { background: #00a32a; box-shadow: 0 0 0 3px rgb(0 163 42 / .18); }
+.loreport-status--warn { background: #fcf3e3; color: #8a5300; border-color: #f0d9a8; }
+.loreport-status--bad { background: #fcf0f1; color: #8a2424; border-color: #f2c4c6; }
+.loreport-status--off { background: #f0f0f1; color: #50575e; border-color: #dcdcde; }
+.loreport-status--off .loreport-status__dot { background: #a7aaad; }
+.loreport-key { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .5em; max-width: 100%; padding: .45em .8em; border: 1px solid #dcdcde; border-radius: 4px; background: #f6f7f7; color: #50575e; box-sizing: border-box; }
+.loreport-key code { background: none; padding: 0; color: #3c434a; }
+.loreport-key .dashicons { width: 20px; height: 20px; font-size: 20px; }
+.loreport-key.is-good .dashicons { color: #00a32a; }
+.loreport-key.is-bad .dashicons { color: #d63638; }
+.loreport-key__note { font-size: 13px; }
+.loreport-key__replace { margin-top: .8em; }
+.loreport-key__replace summary { cursor: pointer; color: #2271b1; width: max-content; }
+.loreport-key__replace[open] summary { margin-bottom: .5em; }

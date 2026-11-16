@@ -74,6 +74,7 @@ Define `LOREPORT_API_URL` in wp-config.php, or use the `loreport_api_url` filter
 
 = 0.4.3 =
 * The settings page is in tabs: Information (adding forms, your list IDs), Popup and comment form, WooCommerce, and Connection (the API key, testing the connection and disconnecting). Each tab saves only its own settings.
+* At a glance: a Connected / Not connected badge beside the settings title, and the saved API key shows as a masked key with a tick (or a warning if LorePort refuses it), with "Replace the key" to change it.
 * The signup block's preview in the editor now looks like the form on the page (the form's stylesheet wasn't loaded in the editor).
 
 = 0.4.2 =
