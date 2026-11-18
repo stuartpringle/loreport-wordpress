@@ -1,4 +1,4 @@
-/* LorePort's own Subscribers, Lists and Newsletters pages in a frame.
+/* LorePort's own pages in a frame.
    Each time the page loads, WordPress asks LorePort for a one-use sign-in link
    (admin-ajax.php → POST /embed-sessions) and opens it in the frame. The frame
    says which page it's on, so this page's address follows (and a reload
@@ -12,6 +12,14 @@
 	var loading = box.querySelector( '.loreport-frame__loading' );
 	var error = box.querySelector( '.loreport-frame__error' );
 	var origin = box.getAttribute( 'data-origin' );
+	// The LorePort sections this frame keeps in step with (from LorePort's menu).
+	var sections = [];
+	try {
+		sections = JSON.parse( box.getAttribute( 'data-sections' ) || '[]' );
+	} catch ( e ) {}
+	var inside = new RegExp( '^/(' + sections.map( function ( s ) {
+		return s.replace( /[^a-z0-9_-]/g, '' );
+	} ).join( '|' ) + ')(/|$|\\?)' );
 
 	function fit() {
 		var top = frame.getBoundingClientRect().top + window.scrollY;
@@ -83,7 +91,7 @@
 		if ( data.type === 'expired' ) {
 			if ( data.manual === true || Date.now() - signedInAt > 60000 ) {
 				var url = new URL( window.location.href );
-				var path = typeof data.path === 'string' && /^\/(subscribers|lists|newsletters)(\/|$|\?)/.test( data.path ) ? data.path : ( url.searchParams.get( 'path' ) || box.getAttribute( 'data-path' ) );
+				var path = typeof data.path === 'string' && inside.test( data.path ) ? data.path : ( url.searchParams.get( 'path' ) || box.getAttribute( 'data-path' ) );
 				open( path );
 			}
 			return;
@@ -91,7 +99,7 @@
 		if ( data.type !== 'navigate' ) {
 			return;
 		}
-		if ( typeof data.path !== 'string' || ! /^\/(subscribers|lists|newsletters)(\/|$|\?)/.test( data.path ) ) {
+		if ( typeof data.path !== 'string' || ! inside.test( data.path ) ) {
 			return;
 		}
 		var url = new URL( window.location.href );

@@ -4,7 +4,7 @@ Tags: newsletter, email, signup form, mailing list, authors
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 0.4.3
+Stable tag: 0.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,9 +20,9 @@ Newsletter signup forms for LorePort authors: a signup block and shortcode, and 
 * **No lost signups.** If LorePort can't be reached for a moment, signups wait on your site and are retried automatically.
 * **Spam protection** without captchas: a hidden field, a time check, and a limit per visitor.
 * **A popup** on every page or just some, opened by any button or menu link to `#loreport-popup`, or on its own after a delay (at most once a month per visitor). It closes with Escape or a click outside and takes its colours from your page.
-* **LorePort inside WordPress:** your Subscribers, Lists and Newsletters (writing, sections, layouts, scheduling and results) are LorePort's own pages, shown in the LorePort menu, so they're always the same as in LorePort. Plus a dashboard widget with the newest subscribers.
+* **LorePort inside WordPress:** your Dashboard, Newsletters (with surveys and polls, sections and layouts, and link clicks), Subscribers (with lists and signup links) and Books are LorePort's own pages, shown in the LorePort menu, so they're always the same as in LorePort. The menu itself comes from LorePort, so new pages appear without a plugin update. Plus a dashboard widget with the newest subscribers.
 
-You need a LorePort account on a plan with API access, and an API key with the "Read pen names, lists and tags" and "Send signups" permissions. To manage subscribers, lists and newsletters from WordPress, also give the key the "Show Subscribers, Lists and Newsletters inside your website" permission and enter your site's address on it.
+You need a LorePort account on a plan with API access, and an API key with the "Read pen names, lists and tags" and "Send signups" permissions. To manage subscribers, lists and newsletters from WordPress, also give the key the "Show your Dashboard, Newsletters, Subscribers and Books inside your website" permission and enter your site's address on it.
 
 == External services ==
 
@@ -71,6 +71,10 @@ Define `LOREPORT_API_URL` in wp-config.php, or use the `loreport_api_url` filter
 6. The Popup and comment form tab.
 
 == Changelog ==
+
+= 0.5.0 =
+* The LorePort menu now has all of LorePort's everyday pages: Dashboard, Newsletters with Surveys & polls, Sections & layouts and Link clicks, Subscribers with Lists and Signup links, and Books. The menu comes from LorePort, so new LorePort pages show up here without a plugin update (until it's connected, or if LorePort can't be reached, the plugin shows these pages). LorePort's own settings still open in LorePort.
+* The LorePort menu now opens on the Dashboard. Old links to the Subscribers, Lists and Newsletters pages still work.
 
 = 0.4.3 =
 * The settings page is in tabs: Information (adding forms, your list IDs), Popup and comment form, WooCommerce, and Connection (the API key, testing the connection and disconnecting). Each tab saves only its own settings.

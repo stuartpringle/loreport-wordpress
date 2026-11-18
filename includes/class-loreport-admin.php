@@ -1,8 +1,7 @@
 <?php
 /**
- * LorePort in the WordPress admin: LorePort's own Subscribers, Lists and
- * Newsletters pages in a frame (embedded mode), the Settings page, and a
- * dashboard widget.
+ * LorePort in the WordPress admin: LorePort's own pages in a frame (embedded
+ * mode), the Settings page, and a dashboard widget.
  *
  * @package LorePort
  */
@@ -12,22 +11,129 @@ defined( 'ABSPATH' ) || exit;
 /**
  * The LorePort admin menu and dashboard widget.
  *
- * Subscribers, Lists and Newsletters are LorePort's own pages, shown in a
- * frame: the plugin asks LorePort for a one-use sign-in link with the API key
+ * The menu comes from LorePort (GET /embed-menu), so new LorePort pages show
+ * up here without a plugin update: Dashboard, Newsletters, Subscribers, Books
+ * and their sub-pages. They're LorePort's own pages, shown in a frame: the
+ * plugin asks LorePort for a one-use sign-in link with the API key
  * (POST /embed-sessions) each time the page loads. That needs the key's
  * "Show … inside your website" permission and this site's address on the key.
+ * LorePort's Settings pages stay in LorePort.
  */
 class LorePort_Admin {
 
-	const MENU = 'loreport-subscribers';
+	/** The top-level menu's slug (its first page). */
+	const MENU = 'loreport-dashboard';
 
-	/** The embedded pages: admin page slug => [menu title, LorePort path]. */
-	public static function pages(): array {
-		return array(
-			'loreport-subscribers' => array( __( 'Subscribers', 'loreport' ), '/subscribers' ),
-			'loreport-lists'       => array( __( 'Lists', 'loreport' ), '/lists' ),
-			'loreport-newsletters' => array( __( 'Newsletters', 'loreport' ), '/newsletters' ),
+	/** Transient holding LorePort's menu. */
+	const MENU_CACHE = 'loreport_menu';
+
+	/**
+	 * The menu used until LorePort's own arrives (not connected yet, or
+	 * LorePort couldn't be reached): the same shape GET /embed-menu returns.
+	 */
+	private static function fallback_menu(): array {
+		$item = fn( string $key, string $label, string $path, array $children = array() ) => array(
+			'key'      => $key,
+			'label'    => $label,
+			'path'     => $path,
+			'embedded' => true,
+			'children' => $children,
 		);
+
+		return array(
+			$item( 'dashboard', __( 'Dashboard', 'loreport' ), '/dashboard' ),
+			$item(
+				'newsletters',
+				__( 'Newsletters', 'loreport' ),
+				'/newsletters',
+				array(
+					$item( 'polls', __( 'Surveys & polls', 'loreport' ), '/newsletters/polls' ),
+					$item( 'sections', __( 'Sections & layouts', 'loreport' ), '/newsletters/sections' ),
+					$item( 'links', __( 'Link clicks', 'loreport' ), '/newsletters/links' ),
+				)
+			),
+			$item(
+				'subscribers',
+				__( 'Subscribers', 'loreport' ),
+				'/subscribers',
+				array(
+					$item( 'lists', __( 'Lists', 'loreport' ), '/lists' ),
+					$item( 'signup-links', __( 'Signup links', 'loreport' ), '/signup-links' ),
+				)
+			),
+			$item( 'books', __( 'Books', 'loreport' ), '/books' ),
+		);
+	}
+
+	/**
+	 * LorePort's menu (GET /embed-menu), cached for a day; the fallback when
+	 * there's no key or LorePort didn't answer (retried after five minutes).
+	 */
+	public static function menu_items(): array {
+		$cached = get_transient( self::MENU_CACHE );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+		if ( '' === LorePort_Settings::api_key() ) {
+			return self::fallback_menu();
+		}
+		$response = LorePort_Client::request( 'GET', 'embed-menu' );
+		$items    = 200 === $response['status'] ? self::clean_menu( (array) ( $response['body']['data'] ?? array() ) ) : array();
+		if ( ! $items ) {
+			$items = self::fallback_menu();
+			set_transient( self::MENU_CACHE, $items, 5 * MINUTE_IN_SECONDS );
+
+			return $items;
+		}
+		set_transient( self::MENU_CACHE, $items, DAY_IN_SECONDS );
+
+		return $items;
+	}
+
+	/** Keeps only well-formed embedded items from LorePort's answer. */
+	private static function clean_menu( array $items ): array {
+		$clean = array();
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) || empty( $item['embedded'] ) || ! is_string( $item['key'] ?? null ) || ! is_string( $item['label'] ?? null )
+				|| ! is_string( $item['path'] ?? null ) || ! preg_match( '#^/[a-z0-9/_-]*$#', $item['path'] ) ) {
+				continue;
+			}
+			$clean[] = array(
+				'key'      => sanitize_key( $item['key'] ),
+				'label'    => sanitize_text_field( $item['label'] ),
+				'path'     => $item['path'],
+				'embedded' => true,
+				'children' => self::clean_menu( (array) ( $item['children'] ?? array() ) ),
+			);
+		}
+
+		return $clean;
+	}
+
+	/**
+	 * The embedded pages, flattened in menu order: admin page slug =>
+	 * [menu title, LorePort path, whether it's a sub-page].
+	 */
+	public static function pages(): array {
+		$pages = array();
+		foreach ( self::menu_items() as $item ) {
+			$pages[ 'loreport-' . $item['key'] ] = array( $item['label'], $item['path'], false );
+			foreach ( $item['children'] as $child ) {
+				$pages[ 'loreport-' . $child['key'] ] = array( $child['label'], $child['path'], true );
+			}
+		}
+
+		return $pages;
+	}
+
+	/** First path segments the frame may open (LorePort checks too). */
+	public static function sections(): array {
+		$sections = array();
+		foreach ( self::pages() as [ , $path ] ) {
+			$sections[] = explode( '/', trim( $path, '/' ) )[0];
+		}
+
+		return array_values( array_unique( array_filter( $sections ) ) );
 	}
 
 	/** Who can see and use these pages. Filter with loreport_capability. */
@@ -43,13 +149,17 @@ class LorePort_Admin {
 	}
 
 	public static function menu(): void {
-		$first = true;
-		foreach ( self::pages() as $slug => [ $title ] ) {
-			if ( $first ) {
-				add_menu_page( __( 'LorePort', 'loreport' ), __( 'LorePort', 'loreport' ), self::capability(), $slug, array( __CLASS__, 'render_embedded' ), 'dashicons-email-alt', 58 );
-				$first = false;
-			}
-			add_submenu_page( self::MENU, $title, $title, self::capability(), $slug, array( __CLASS__, 'render_embedded' ) );
+		add_menu_page( __( 'LorePort', 'loreport' ), __( 'LorePort', 'loreport' ), self::capability(), self::MENU, array( __CLASS__, 'render_embedded' ), 'dashicons-email-alt', 58 );
+		$pages = self::pages();
+		// The top-level menu opens the first page, whatever LorePort lists first.
+		if ( ! isset( $pages[ self::MENU ] ) ) {
+			$first = array_key_first( $pages );
+			add_submenu_page( '', $pages[ $first ][0], $pages[ $first ][0], self::capability(), self::MENU, array( __CLASS__, 'render_embedded' ) );
+		}
+		foreach ( $pages as $slug => [ $title, , $child ] ) {
+			// WordPress menus have two levels, so LorePort's sub-pages are indented under their page.
+			$label = $child ? '<span class="loreport-menu-child" style="padding-inline-start:0.75em">' . esc_html( $title ) . '</span>' : esc_html( $title );
+			add_submenu_page( self::MENU, $title, $label, self::capability(), $slug, array( __CLASS__, 'render_embedded' ) );
 		}
 		add_submenu_page( self::MENU, __( 'LorePort settings', 'loreport' ), __( 'Settings', 'loreport' ), 'manage_options', LorePort_Settings::PAGE, array( 'LorePort_Settings', 'render' ) );
 	}
@@ -60,14 +170,14 @@ class LorePort_Admin {
 		}
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only picks which script to load.
 		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
-		if ( isset( self::pages()[ $page ] ) ) {
+		if ( self::MENU === $page || isset( self::pages()[ $page ] ) ) {
 			wp_enqueue_script( 'loreport-embed', LOREPORT_URL . 'assets/embed.js', array(), LOREPORT_VERSION, true );
 		}
 	}
 
 	/* ---------------------------------------------------------------- Embedded pages */
 
-	/** Subscribers, Lists or Newsletters: LorePort's page in a frame. */
+	/** One of LorePort's pages in a frame. */
 	public static function render_embedded(): void {
 		if ( ! current_user_can( self::capability() ) ) {
 			return;
@@ -77,7 +187,7 @@ class LorePort_Admin {
 		$path  = isset( $_GET['path'] ) ? sanitize_text_field( wp_unslash( $_GET['path'] ) ) : '';
 		// phpcs:enable
 		$pages = self::pages();
-		$start = $pages[ $page ][1] ?? '/subscribers';
+		$start = $pages[ $page ][1] ?? ( reset( $pages )[1] ?? '/dashboard' );
 		$path  = self::valid_path( $path ) ? $path : $start;
 		?>
 		<div class="wrap loreport-embedded">
@@ -97,7 +207,8 @@ class LorePort_Admin {
 					data-ajax="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>"
 					data-nonce="<?php echo esc_attr( wp_create_nonce( 'loreport_embed_link' ) ); ?>"
 					data-path="<?php echo esc_attr( $path ); ?>"
-					data-origin="<?php echo esc_attr( LorePort_Client::base_url() ); ?>">
+					data-origin="<?php echo esc_attr( LorePort_Client::base_url() ); ?>"
+					data-sections="<?php echo esc_attr( (string) wp_json_encode( self::sections() ) ); ?>">
 					<p class="loreport-frame__loading"><span class="spinner is-active"></span> <?php esc_html_e( 'Opening LorePort…', 'loreport' ); ?></p>
 					<div class="notice notice-error inline loreport-frame__error" hidden><p></p></div>
 					<iframe title="<?php esc_attr_e( 'LorePort', 'loreport' ); ?>" hidden allow="clipboard-write"></iframe>
@@ -107,9 +218,11 @@ class LorePort_Admin {
 		<?php
 	}
 
-	/** A LorePort page the frame may open: Subscribers, Lists or Newsletters. */
+	/** A LorePort page the frame may open: one of the menu's sections. */
 	private static function valid_path( string $path ): bool {
-		return (bool) preg_match( '#^/(subscribers|lists|newsletters)(/[A-Za-z0-9/_-]*)?(\?[A-Za-z0-9=&%_.+-]*)?$#', $path );
+		$sections = implode( '|', array_map( fn( $s ) => preg_quote( $s, '#' ), self::sections() ) );
+
+		return '' !== $sections && (bool) preg_match( '#^/(' . $sections . ')(/[A-Za-z0-9/_-]*)?(\?[A-Za-z0-9=&%_.+-]*)?$#', $path );
 	}
 
 	/** Ajax: a fresh one-use sign-in link for the frame. */
@@ -118,8 +231,8 @@ class LorePort_Admin {
 			wp_send_json_error( array( 'message' => __( 'You can\'t open LorePort here.', 'loreport' ) ), 403 );
 		}
 		check_ajax_referer( 'loreport_embed_link' );
-		$path = isset( $_POST['path'] ) ? sanitize_text_field( wp_unslash( $_POST['path'] ) ) : '/subscribers';
-		$path = self::valid_path( $path ) ? $path : '/subscribers';
+		$path = isset( $_POST['path'] ) ? sanitize_text_field( wp_unslash( $_POST['path'] ) ) : '/dashboard';
+		$path = self::valid_path( $path ) ? $path : '/dashboard';
 
 		$response = LorePort_Client::request( 'POST', 'embed-sessions', array( 'path' => $path ) );
 		if ( 201 === $response['status'] && ! empty( $response['body']['data']['url'] ) ) {
@@ -128,7 +241,7 @@ class LorePort_Admin {
 
 		$code = (string) ( $response['body']['error']['code'] ?? '' );
 		if ( 403 === $response['status'] && 'no_website' !== $code && 'plan_has_no_api' !== $code ) {
-			$message = __( 'This API key can\'t show LorePort\'s pages here yet. In LorePort, go to Settings → API and webhooks: give the key the "Show Subscribers, Lists and Newsletters inside your website" permission, and add this site\'s address to it.', 'loreport' );
+			$message = __( 'This API key can\'t show LorePort\'s pages here yet. In LorePort, go to Settings → API and webhooks: give the key the "Show … inside your website" permission (dashboard:embed), and add this site\'s address to it.', 'loreport' );
 		} elseif ( 'no_website' === $code ) {
 			/* translators: %s: this site's address */
 			$message = sprintf( __( 'In LorePort, go to Settings → API and webhooks and add this site\'s address (%s) to the key. Only that site can show LorePort\'s pages.', 'loreport' ), home_url() );
@@ -241,9 +354,10 @@ class LorePort_Admin {
 	 * @param string $path LorePort path, such as /subscribers/ID.
 	 */
 	public static function url( string $path ): string {
-		$section = explode( '/', trim( $path, '/' ) )[0] ?? 'subscribers';
+		$section = explode( '/', trim( $path, '/' ) )[0] ?? 'dashboard';
+		$page    = isset( self::pages()[ 'loreport-' . sanitize_key( $section ) ] ) ? 'loreport-' . sanitize_key( $section ) : self::MENU;
 
-		return add_query_arg( array( 'path' => $path ), admin_url( 'admin.php?page=loreport-' . sanitize_key( $section ) ) );
+		return add_query_arg( array( 'path' => $path ), admin_url( 'admin.php?page=' . $page ) );
 	}
 
 	public static function dashboard_widget(): void {
@@ -286,9 +400,9 @@ class LorePort_Admin {
 				</ul>
 			<?php endif; ?>
 			<p class="loreport-widget__links">
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=loreport-subscribers' ) ); ?>"><?php esc_html_e( 'Subscribers', 'loreport' ); ?></a> ·
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=loreport-lists' ) ); ?>"><?php esc_html_e( 'Lists', 'loreport' ); ?></a> ·
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=loreport-newsletters' ) ); ?>"><?php esc_html_e( 'Newsletters', 'loreport' ); ?></a>
+				<a href="<?php echo esc_url( self::url( '/dashboard' ) ); ?>"><?php esc_html_e( 'Dashboard', 'loreport' ); ?></a> ·
+				<a href="<?php echo esc_url( self::url( '/subscribers' ) ); ?>"><?php esc_html_e( 'Subscribers', 'loreport' ); ?></a> ·
+				<a href="<?php echo esc_url( self::url( '/newsletters' ) ); ?>"><?php esc_html_e( 'Newsletters', 'loreport' ); ?></a>
 			</p>
 		</div>
 		<?php

@@ -154,6 +154,7 @@ class LorePort_Settings {
 		}
 		delete_transient( 'loreport_lists' );
 		delete_transient( 'loreport_status' );
+		delete_transient( LorePort_Admin::MENU_CACHE );
 
 		return $value;
 	}
@@ -305,6 +306,7 @@ class LorePort_Settings {
 		$status = self::remember_status( self::check() );
 		if ( 'connected' === $status['state'] ) {
 			delete_transient( 'loreport_lists' );
+			delete_transient( LorePort_Admin::MENU_CACHE );
 		}
 		set_transient(
 			'loreport_test_result_' . get_current_user_id(),
