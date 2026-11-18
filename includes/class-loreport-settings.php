@@ -80,12 +80,18 @@ class LorePort_Settings {
 	 * @return array<string, string>
 	 */
 	public static function tabs(): array {
-		return array(
+		$tabs = array(
 			'information' => __( 'Information', 'loreport' ),
 			'popup'       => __( 'Popup and comment form', 'loreport' ),
 			'woocommerce' => __( 'WooCommerce', 'loreport' ),
-			'connection'  => __( 'Connection', 'loreport' ),
 		);
+		// Only on sites with MailPoet (D-040).
+		if ( LorePort_Import::available() ) {
+			$tabs['import'] = __( 'Import from MailPoet', 'loreport' );
+		}
+		$tabs['connection'] = __( 'Connection', 'loreport' );
+
+		return $tabs;
 	}
 
 	/**
@@ -404,6 +410,9 @@ class LorePort_Settings {
 						break;
 					case 'woocommerce':
 						self::render_woocommerce_tab();
+						break;
+					case 'import':
+						LorePort_Import::render_tab( $lists );
 						break;
 					case 'connection':
 						self::render_connection_tab( $key, $lists, $status );

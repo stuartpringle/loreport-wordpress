@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       LorePort
  * Plugin URI:        https://loreport.ca
- * Description:       Newsletter signup forms for LorePort authors: a signup block and shortcode, plus opt-in checkboxes on comments and WooCommerce checkout.
- * Version:           0.5.0
+ * Description:       Newsletter signup forms for LorePort authors: a signup block and shortcode, opt-in checkboxes on comments and WooCommerce checkout, and moving over from MailPoet.
+ * Version:           0.6.0
  * Requires at least: 6.4
  * Requires PHP:      8.0
  * Author:            LorePort
@@ -14,7 +14,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'LOREPORT_VERSION', '0.5.0' );
+define( 'LOREPORT_VERSION', '0.6.0' );
 define( 'LOREPORT_FILE', __FILE__ );
 define( 'LOREPORT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'LOREPORT_URL', plugin_dir_url( __FILE__ ) );
@@ -28,6 +28,8 @@ require_once LOREPORT_DIR . 'includes/class-loreport-admin.php';
 require_once LOREPORT_DIR . 'includes/class-loreport-comments.php';
 require_once LOREPORT_DIR . 'includes/class-loreport-woocommerce.php';
 require_once LOREPORT_DIR . 'includes/class-loreport-privacy.php';
+require_once LOREPORT_DIR . 'includes/class-loreport-mailpoet.php';
+require_once LOREPORT_DIR . 'includes/class-loreport-import.php';
 
 add_action( 'plugins_loaded', array( 'LorePort_Settings', 'init' ) );
 add_action( 'plugins_loaded', array( 'LorePort_Signups', 'init' ) );
@@ -37,6 +39,7 @@ add_action( 'plugins_loaded', array( 'LorePort_Admin', 'init' ) );
 add_action( 'plugins_loaded', array( 'LorePort_Comments', 'init' ) );
 add_action( 'plugins_loaded', array( 'LorePort_WooCommerce', 'init' ) );
 add_action( 'plugins_loaded', array( 'LorePort_Privacy', 'init' ) );
+add_action( 'plugins_loaded', array( 'LorePort_Import', 'init' ) );
 
 register_activation_hook( __FILE__, array( 'LorePort_Signups', 'schedule_retries' ) );
 register_deactivation_hook( __FILE__, array( 'LorePort_Signups', 'unschedule_retries' ) );

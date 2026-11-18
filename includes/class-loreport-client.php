@@ -30,9 +30,10 @@ class LorePort_Client {
 	 * @param string     $path   Path under /api/v1, such as "lists".
 	 * @param array|null $body   JSON body.
 	 * @param string     $key    API key to use instead of the saved one (for testing a new key).
+	 * @param int        $timeout Seconds to wait (imports send bigger requests).
 	 * @return array{status: int, body: array, error: string|null} status 0 means LorePort couldn't be reached.
 	 */
-	public static function request( string $method, string $path, ?array $body = null, string $key = '' ): array {
+	public static function request( string $method, string $path, ?array $body = null, string $key = '', int $timeout = 10 ): array {
 		$key = '' !== $key ? $key : LorePort_Settings::api_key();
 		if ( '' === $key ) {
 			return array(
@@ -44,7 +45,7 @@ class LorePort_Client {
 
 		$args = array(
 			'method'      => $method,
-			'timeout'     => 10,
+			'timeout'     => $timeout,
 			'redirection' => 0,
 			'headers'     => array(
 				'Authorization' => 'Bearer ' . $key,

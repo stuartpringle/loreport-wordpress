@@ -4,7 +4,7 @@ Tags: newsletter, email, signup form, mailing list, authors
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 0.5.0
+Stable tag: 0.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,9 @@ Define `LOREPORT_API_URL` in wp-config.php, or use the `loreport_api_url` filter
 6. The Popup and comment form tab.
 
 == Changelog ==
+
+= 0.6.0 =
+* Import from MailPoet: on sites with MailPoet, LorePort → Settings has an "Import from MailPoet" tab. It brings your subscribers over with their status, original signup details and tags, makes a LorePort list for each MailPoet list (or adds them to one you choose), and optionally your sent newsletters with their totals, readers' opens and clicks, automations (kept until LorePort runs automations, with who already went through them), your signup form's wording and confirmation email, sender addresses and saved templates. MailPoet isn't changed, and running it again adds nothing twice. Needs a LorePort key with the "Import from another newsletter service" permission.
 
 = 0.5.0 =
 * The LorePort menu now has all of LorePort's everyday pages: Dashboard, Newsletters with Surveys & polls, Sections & layouts and Link clicks, Subscribers with Lists and Signup links, and Books. The menu comes from LorePort, so new LorePort pages show up here without a plugin update (until it's connected, or if LorePort can't be reached, the plugin shows these pages). LorePort's own settings still open in LorePort.
